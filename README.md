@@ -63,16 +63,20 @@ gantt
     axisFormat %d.%m.%y
     section Backend
         Requirement analyse     :done,      t00, 2023-05-01, 3w
-        Initial project setup   :active,    t01, after t00, 3w
+        Initial project setup   :done,      t01, after t00, 3w
         NFT Implementation      :active,    t02, after t01, 4w
         Database schemas        :active,    t03, after t01, 4w
         Credential schemas      :           t04, after t02, 1w
         ZKP Implementation      :           t05, after t04, 1w
         Unittests               :active,    t06, after t01, 6w
         Benchmarks and Tests    :           t07, after t06, 1w
+
+    section Milestones
         optimistic rollup       :milestone, m01, after t01, 2w
-        ZK rollup               :milestone, m02, after t03, before t04
-    
+        ZK rollup               :milestone, m02, after t03, 0d
+        backend release         :milestone, m03, after t07, 0d
+        full release            :milestone, m04, after t15, 0d
+        
     section Frontend
         Requirement analyse     : t11, after t02, 3w
         Design                  : t12, after t11, 3w
