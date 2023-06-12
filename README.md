@@ -53,9 +53,6 @@ The use of Merkletrees excludes the possibility of tracing back former ownership
 ## Roadmap
 
 ```mermaid
----
-displayMode: compact
----
 gantt
     axisFormat %d.%m.%y
     section Backend
