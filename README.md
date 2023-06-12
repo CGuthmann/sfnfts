@@ -47,7 +47,8 @@ The use of Merkletrees excludes the possibility of tracing back former ownership
 
 ## Contributing
 
-If you want to contribute to this project, please make sure you familiarize yourself with our wiki, 
+If you want to contribute to this project, please make sure you familiarize yourself with our 
+[wiki](https://gitlab.fit.fraunhofer.de/pgwi/blockchainlab/sfnfts/-/wikis/home), 
 **especially the coding and git guidelines**, and apply them.
 
 As questions arise that are not covered by the wiki, please update the wiki accordingly for the next new 
