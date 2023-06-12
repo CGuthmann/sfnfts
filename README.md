@@ -74,10 +74,10 @@ gantt
     
     section Frontend
         Requirement analyse     : t11, after t02, 3w
-        Design                  : t12, after t11, 2w
-        Concept/Prototype       : t13, after t12, 2w
+        Design                  : t12, after t11, 3w
+        Concept/Prototype       : t13, after t12, 3w
         Implementation          : t14, after t13, 3w
-        Testing                 : t15, after t14, 2w
+        Testing                 : t15, after t14, 3w
  
 ```
 
