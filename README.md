@@ -52,7 +52,35 @@ The use of Merkletrees excludes the possibility of tracing back former ownership
 
 ## Roadmap
 
+```mermaid
+---
+displayMode: compact
+---
+gantt
+    axisFormat %d.%m.%y
+    section Backend
+        Requirement analyse     :done,      t00, 2023-05-01, 3w
+        Initial project setup   :active,    t01, after t00, 3w
+        NFT Implementation      :active,    t02, after t01, 4w
+        Database schemas        :active,    t03, after t01, 4w
+        Credential schemas      :           t04, after t02, 1w
+        ZKP Implementation      :           t05, after t04, 1w
+        Unittests               :active,    t06, after t01, 6w
+        Benchmarks and Tests    :           t07, after t06, 1w
+        optimistic rollup       :milestone, m01, after t01, 2w
+        ZK rollup               :milestone, m02, after t03, before t04
+    
+    section Frontend
+        Requirement analyse     : t11, after t02, 3w
+        Design                  : t12, after t11, 2w
+        Concept/Prototype       : t13, after t12, 2w
+        Implementation          : t14, after t13, 3w
+        Testing                 : t15, after t14, 2w
+ 
+```
+
 ## Authors and acknowledgment
+
 Original idea by Matthias Babel et al.: 
 ["Enabling end-to-end digital carbon emission tracing with shielded NFTs"](https://doi.org/10.1186/s42162-022-00199-3)
 
