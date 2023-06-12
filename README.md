@@ -46,7 +46,12 @@ The use of Merkletrees excludes the possibility of tracing back former ownership
 [//]: <> (TODO: Zusammenfassung der Verwendung, ggf. Troubleshooting)
 
 ## Contributing
-[//]: <> (TODO: Zusammenfassung der Git-Wikipage)
+
+If you want to contribute to this project, please make sure you familiarize yourself with our wiki, 
+**especially the coding and git guidelines**, and apply them.
+
+As questions arise that are not covered by the wiki, please update the wiki accordingly for the next new 
+developer.
 
 ***
 
