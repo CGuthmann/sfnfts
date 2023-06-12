@@ -5,6 +5,8 @@
 - Avoid unnecessary complex constructs. Everybody should be able to understand the code.
 - Be mindful of optimizations. Especially in limiting 
 
+[//]: <> (TODO: No passwords in code, never!)
+
 ## Documentation Guidelines
 - Every code file should start with a short introduction to its purpose.
 - Every function should be proceeded by a short description.
