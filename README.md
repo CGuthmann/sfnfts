@@ -72,8 +72,8 @@ gantt
         Benchmarks and Tests    :           t07, after t06, 1w
 
     section Milestones
-        optimistic rollup       :milestone, m01, after t01, 2w
-        ZK rollup               :milestone, m02, after t03, 0d
+        optimistic rollup       :milestone, m01, after t02, 0w
+        ZK rollup               :milestone, m02, after t05, 0d
         backend release         :milestone, m03, after t07, 0d
         full release            :milestone, m04, after t15, 0d
         
