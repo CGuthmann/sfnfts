@@ -60,3 +60,6 @@ impl<S: SignatureFunction> Clone for Signature<S>{
     }
 }
 
+pub trait Hashable{
+    fn to_hash(&self) -> BigInt;
+}
