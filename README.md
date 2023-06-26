@@ -40,7 +40,7 @@ The use of Merkletrees excludes the possibility of tracing back former ownership
 
 ### Rust
 
-In order to be able to complicate Rust files you are support to install the rust toolchain, including the 
+In order to be able to compile Rust files you are support to install the rust toolchain, including the 
 rust compiler `rustc`, `cargo` and the toolchain manager `rustup`. 
 
 #### Ubuntu
