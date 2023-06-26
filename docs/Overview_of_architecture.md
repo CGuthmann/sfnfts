@@ -211,7 +211,51 @@ There are some special cases that need to be considered while working with SQLit
 
 ### Relational model
 
-tbd.
+Note that SQLite only knows `NULL`, `INTEGER`, `REAL`, `TEXT` and `BLOB`.
+This means that the actual implementation deviates from the model, which was deliberately kept database 
+agnostic.
+
+Importend Mappings are:
+
+| data type | SQLite represnentation   |
+|-----------|--------------------------|
+| `UUID`    | `INTEGER` / `TEXT`       |
+| `BOOLEAN` | `INTEGER`                |
+| `BIGINT`  | `TEXT`                   |
+| `DATE`    | `TEXT`                   |
+| `ARRAY`   | `BLOB` / multiple fields |
+
+```mermaid
+erDiagram
+    NFT }o--|| Certificate: represented
+    
+    NFT {
+        UUID ID PK
+        BIGINT hash FK
+        BIGINT puplic_key
+        BIGINT quantity
+        BIGINT[2] fraction
+        BOOLEAN consumed
+        BIGINT salt
+    }
+    
+    Certificate {
+        UUID ID PK
+        DATE timestamp
+        BLOB body
+        BIGINT hash UK "Derived from timestamp and body"
+    }
+    
+    MerkleTree {
+        BIGINT root
+        BIGINT[] leafs
+    }
+    
+    TrustList {
+       BIGINT root
+       BIGINT[] leafs
+    }
+```
 
 ***
 
