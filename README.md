@@ -37,6 +37,55 @@ They enable an anonymous ("shielded") transaction of the NFTs.
 The use of Merkletrees excludes the possibility of tracing back former ownerships.
 
 ## Installation
+
+### Rust
+
+In order to be able to complicate Rust files you are support to install the rust toolchain, including the 
+rust compiler `rustc`, `cargo` and the toolchain manager `rustup`. 
+
+#### Ubuntu
+1. Install Rust
+   1. To do so run the following command and follow the script instructions:
+       ```bash
+       curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh
+       ```
+   2. **If the installation script fails to add Rust to the PATH,** you can add the directory 
+   **permanently** to your PATH with:
+       ```bash
+       echo "if [ -d ~./cargo/bin ]; then \n export PATH=${PATH}:~/.cargo/bin \n fi" >> ~./bashrc
+       ```
+   3. To add the directory to the PATH of your current session (without restart) run:
+      ```bash
+      source ~/.cargo/env
+      ```
+2. Verify the installation
+    ```bash
+    rustc --version
+    ```
+3. Install a Compiler
+    1. Install pending updates  
+        ```bash 
+        sudo apt update
+        sudo apt upgrade
+        ```
+   2. Install the `build-essential` package
+       ```bash 
+       sudo apt install build-essential
+       ```
+      
+You are now able to compile *.rc files using `rustc`.
+***
+To update you rust version run:
+```bash
+rustup update
+```
+***
+To uninstall rust run:
+```bash
+rustup self uninstall
+```
+
+### IDE
 [//]: <> (TODO: IDE Setup)
 
 ## Test and Deploy
