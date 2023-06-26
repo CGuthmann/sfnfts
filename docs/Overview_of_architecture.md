@@ -58,26 +58,25 @@ classDiagram
     FractionalNFT <|.. ShieldedFractionalNFT
     ShieldedNFT <|.. ShieldedFractionalNFT
     class NFT {
-        <<interface>>
-        +value : BigInt
-        +new(value)
-        +transact(target)
-        +burn()
-        +get_value() BigInt
+       <<interface>>
+       +source_hash : BigInt
+       +public_key_owner : BigInt
+       +total_quantity : BigInt
+       +consumed: bool
+       +salt: BigInt
+       +new(BigInt source, BigInt value, BigInt owner) NFT
+       +transact(BigInt target)
+       +burn()
+       +get_value() BigInt
     }
     class FractionalNFT {
         <<interface>>
-        +fraction : BigInt
-        +new(value)
-        +transact(target)
-        +transact_split(fraction, targetA, targetB)
-        +burn()
+        +fraction : BigInt[2]
+        +new(BigInt source, BigInt value, BigInt owner, BigInt[2] fraction) FractionalNFT
+        +transact_split(BigInt[2] fraction, BigInt targetA, BigInt targetB)
     }
     class ShieldedNFT {
         <<interface>>
-        +new(value)
-        +transact(target)
-        +burn()
         #transferZKP()
         #mintZKP()
     }
