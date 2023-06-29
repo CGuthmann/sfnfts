@@ -52,7 +52,7 @@ rust compiler `rustc`, `cargo` and the toolchain manager `rustup`.
    2. **If the installation script fails to add Rust to the PATH,** you can add the directory 
    **permanently** to your PATH with:
        ```bash
-       echo "if [ -d ~./cargo/bin ]; then \n export PATH=${PATH}:~/.cargo/bin \n fi" >> ~./bashrc
+       echo "if [ -d ~/.cargo/bin ]; then \n export PATH=${PATH}:~/.cargo/bin \n fi" >> ~/.bashrc
        ```
    3. To add the directory to the PATH of your current session (without restart) run:
       ```bash
