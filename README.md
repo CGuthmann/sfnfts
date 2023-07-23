@@ -1,8 +1,5 @@
 # SFNFTs 
 
-## Getting started
-[//]: <> (TODO: Readme Zusammenfassung)
-
 ***
 
 ## Name
@@ -35,6 +32,10 @@ NFTs guarantee privacy and prevent double-counting. For this purpose, invalidate
 ownerships are stored with Merkletrees.
 They enable an anonymous ("shielded") transaction of the NFTs.
 The use of Merkletrees excludes the possibility of tracing back former ownerships.
+
+***
+
+# Getting started
 
 ## Installation
 
