@@ -85,8 +85,24 @@ To uninstall rust run:
 rustup self uninstall
 ```
 
+### Docker
+
 ### IDE
-[//]: <> (TODO: IDE Setup)
+
+#### VS Code (free)
+
+The Website of Visual Studio Code provides two detailed guides:
+1. Installing VS Code
+    1. [Windows](https://code.visualstudio.com/docs/setup/windows)
+    2. [Linux](https://code.visualstudio.com/docs/setup/linux)
+2. [Setup VS Code for Rust](https://code.visualstudio.com/docs/languages/rust)
+3. [Setup VS Code for Docker](https://code.visualstudio.com/docs/containers/overview)
+
+#### IntelliJ (license required)
+
+1. Install the [JetBrains Toolbox](https://www.jetbrains.com/de-de/toolbox-app/)
+2. Install the IntelliJ IDE using the toolbox
+3. Install the [Rust Plugin](https://www.jetbrains.com/de-de/rust/) inside of IntelliJ 
 
 ## Test and Deploy
 [//]: <> (TODO: Zusammenfassung der Test-Wikipage und zum Compilen)
