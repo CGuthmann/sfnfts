@@ -1,7 +1,5 @@
 # SFNFTs 
 
-***
-
 ## Name
 Shielded Fractional NFTs
 
