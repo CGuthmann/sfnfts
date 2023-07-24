@@ -407,6 +407,64 @@ flowchart
     cli1_backend <-- NFT / Cert. --> oc_api
     cli2_backend <-- NFT / Cert. --> oc_api
 ```
+
+### APIs
+
+The APIs are implemented using the [rocket crate](https://rocket.rs/).  
+APIs consist out of **controllers** that handle the **endpoints** (or **routes**) for one major group of provided 
+HTTP requests.
+
+**Controllers** take care of building the final reply and enforcing rules on permissions and authentication.
+**For sake of security and since rocket does not provide advanced technologies to handle this, be very aware about the 
+data you return from endpoints, as well of as of the management of permissions who can interact with these endpoints.**
+For all other functionality controllers make use of so-called **services** (or **providers**).
+
+You can think about controllers as extended interfaces. **Services** would be the implementation of such an interface.
+Services are seperated from controllers because they most likely will contain functions that could be used from other 
+services. Since **we don't want to send HTTP requests to use a specific function of our own API** (including permission 
+handling and authentication) we separate those functions in separate modules.
+The [documentation of NestJS](https://docs.nestjs.com/) provide general guidance for this idea.
+
+**Routes** are annotated functions in the controller that call the according functions in the services. 
+
+In most of the cases it should be enough to encapsulate the controllers and services in separate modules.
+However, if constructors and temporary storing data (in struct fields) becomes necessary an implementation using structs 
+and traits might be necessary.
+
+```mermaid
+classDiagram
+    direction LR
+    API "n" *-- "1" Controller : contains
+    Controller "n" *-- "1" Service : contains
+    Service -- Service : use
+    
+    class API {
+        <<abstract>>
+    }
+    class Controller {
+        <<abstract>>
+    }
+    class Service {
+        <<abstract>>
+    }
+```
+
+### Data Transfer Object (DTO)
+
+DTO is a pattern to handle data transfer between seperated systems with unique data representations.
+A DTO is used to encapsulate data, and send it from one subsystem of an application to another.
+In our case this is done by parsing the data to into a JSON format and send JSON-Strings through the network. 
+
+Each DTO contains clearly defined fields with defined data types.
+API endpoints should always return DTOs and only accept data that matches a specified DTO.
+
+This increases security as invalid and malicious requests can be detected and filtered more easily.
+Furthermore, the code quality is significantly increased by clearly defined interfaces and type definitions.
+Because of the clear specification of DTOs and which endpoints accept which DTOs, DTOs can be easily and error-free 
+converted into corresponding rust structs, which can then be passed on to the services and be processed.
+
+The use of DTOs also allows the user of the API to choose his own language, so that he does not necessarily have to 
+work with rust.
 ***
 
 [^1]: [SQLite](https://www.sqlite.org/)
