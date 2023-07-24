@@ -240,11 +240,6 @@ interaction with the Database.
 All actions related to the database take place inside the Rust code, using the _sqlite_ crate[^2].
 The queries are simple SQL-strings that passed to the according library functions.
 
-Right now we are storing the Data in JSON-formatted BLOBs, since we only need this Database to
-permanently store our data, produced during runtime, in a consistent way.
-But this may change if the interaction with the stored data becomes more complex and requires the data,
-stored in the BLOBs, to become accessible for queries.
-
 SQLite is not the perfect choice for applications with a large amount of data (that's transferred over a
 network) and many concurrent writers. Because of that, it also may be necessary later on to move on to a
 full Client-Server based database system if the use case of this prototype grows.
