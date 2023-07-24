@@ -65,6 +65,10 @@ You may leave out unnecessary sections.
 fn my_func() { /* ... */ }
 ```
 
+We are using the `ignore` attribute here, because otherwise the examples in the docstrings are tested whether they 
+compile or not and **will be executed** (use `no_run` to suppress this). For more information on possible attributes and 
+doc tests consider the official rust documentation.
+
 ## Further Reading
  - [Rust by example](https://doc.rust-lang.org/rust-by-example/meta/doc.html)
  - [The Rustdoc Book](https://doc.rust-lang.org/rustdoc/index.html)
