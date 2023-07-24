@@ -1,15 +1,15 @@
 # Overview of architecture
 
 ## Packages
-The following graphics give a short overview of all packages of the project. The illustrations will be
+The following graphics give a short overview of all packages in the project. The illustrations will be
 updated continuously during the course of the project, as the Mermaid plugin used is still under
 development and cannot yet map all dependencies.
 
 In fact, the frontend package is a second application, since it has to be written in Java for mobile apps 
 and thus cannot be deployed together with the backend, which is written in Rust.
 The same applies to the Circuits package, since the ZKPs it contains are written in Solidity.
-The certificate service, BCservice and DBservice contain common interfaces so that arbitrary 
-implementations for certificates, blockchains and database can be used.
+The certificate service, BCservice, and DBservice contain common interfaces so that arbitrary 
+implementations for certificates, blockchains, and databases can be used.
 
 ```plantuml
 @startuml
@@ -37,11 +37,11 @@ package Backend {
     }
 }
 
-Frontend ..> Backend
-Backend ..> Circuits
-CertificateService ..> NFT
-NFT ..> BCService
-NFT ..> Crypto
+Frontend ..> Backend : use 
+Backend ..> Circuits : use 
+CertificateService ..> NFT : use
+NFT ..> BCService : use 
+NFT ..> Crypto : use
 
 @enduml
 ```
@@ -55,8 +55,8 @@ In this way, any type of NFTs could be implemented.
 classDiagram
     NFT <|-- FractionalNFT
     NFT <|-- ShieldedNFT
-    FractionalNFT <|.. ShieldedFractionalNFT
-    ShieldedNFT <|.. ShieldedFractionalNFT
+    FractionalNFT <|.. ShieldedFractionalNFT : Implements
+    ShieldedNFT <|.. ShieldedFractionalNFT : Implements
     class NFT {
        <<interface>>
        +source_hash : BigInt
@@ -91,8 +91,8 @@ transactions. The accumulator is used to store the transactions on the blockchai
 
 ```mermaid
 classDiagram
-    NFTMaster ..|> Verifier
-    NFTMaster ..|> Accumulator
+    NFTMaster ..|> Verifier : Implements
+    NFTMaster ..|> Accumulator : Implements
     class NFTMaster {
         +root
         +nullifier
@@ -127,11 +127,73 @@ classDiagram
     }
 ```
 
+### The DBService Package
+
+For more information see the [Database](#database) section.
+```mermaid
+classDiagram
+
+    PersistentService <|.. SQLiteService  : Implements
+    Table -- PersistentService
+    Table -- Entity
+
+    class DatabaseError {
+        <<enumeration>>
+       Connection,
+       NotFound,
+       InvalidSQL,
+       InvalidParameter,
+       AtInsert,
+       AtQuery
+    }
+    
+    class Entity~T~{
+        <<interface>>
+        +from(String[] v): T
+        +into(T entity): String[]
+        +id(): &BigInt
+        +id_mut(): &mut BigInt
+    }
+
+    class Table~T: Entity, S: PersistentService~{
+        <<abstract>> 
+        -table_name: String
+        -service: S
+        +new(String table_name, S persistent_service) Table
+        +get_by_id(BigInt id) T
+        +get_all() T[]
+        +save(&T entity) BigInt
+        +update(&T entity) uint
+        +delete(BigInt id) uint
+    }
+
+    class PersistentService {
+        <<abstract>>
+        -connection : Connection
+        +new(String db) PersistentService
+        +create_db(String query)
+        +close_connection()
+        +get_all(String table) HashMap~String, String~ []
+        +get_by_id(String table, BigInt id) HashMap~String, String~
+        +save(String table, String[] columns, String[] values) BigInt
+        +update() uint
+        +delete(String table, BigInt id) uint
+    }
+    
+    class SQLiteService{
+        - primary_key(String table) String
+        - index_value_pair(String[] v) (uint, Value)[]
+        - bind_values(String[] values, Statement stmt)
+        - get_last_row_id() BigInt
+        - read_row(Statement stmt) Hashmap~String, String~
+    }
+```
+
 ### The CertificateService Package
 
 Certificates are created using the Heimdall framework and use the two ZKPs of the Circuits package.
 In addition, they must implement the Hashable and ShieldedFractionalNFT interfaces.
-(corresponding representation with mermaid follows)
+(Corresponding representation with mermaid follows)
 
 ```mermaid
 classDiagram
@@ -168,7 +230,7 @@ classDiagram
 
 ## Database
 
-As this is just a small prototype to give a proof of concept we avoided to handle a full Client-Server 
+As this is just a small prototype to give a proof of concept, we avoided handling a full Client-Server 
 based database system by using SQLite[^1]. 
 
 Think of SQLite not as a replacement for a full SQL Database but as a replacement for `fopen()`.
@@ -180,19 +242,19 @@ The queries are simple SQL-strings that passed to the according library function
 
 Right now we are storing the Data in JSON-formatted BLOBs, since we only need this Database to
 permanently store our data, produced during runtime, in a consistent way.
-But this may change if the interaction with the stored data becomes more complex and require the data,
+But this may change if the interaction with the stored data becomes more complex and requires the data,
 stored in the BLOBs, to become accessible for queries.
 
-SQLite is not the perfect choice for applications with large amount of data (that's transferred over a
-network) and many concurrent writers. Because of that it also may be necessary later on to move on to a
+SQLite is not the perfect choice for applications with a large amount of data (that's transferred over a
+network) and many concurrent writers. Because of that, it also may be necessary later on to move on to a
 full Client-Server based database system if the use case of this prototype grows.
 
 We have chosen SQLite as the SQL-based interface, as this makes it easier to implement the future changes
 described above.
 
-### Quirks, Caveats, and Gotchas In SQLite[^3]
+### Quirks, Caveats, and Gotchas In SQLite
 
-There are some special cases that need to be considered while working with SQLite:
+There are some special cases that need to be considered while working with SQLite:[^3]
 1. SQLite Is Embedded, Not Client-Server
 2. Flexible Typing
    - No Separate BOOLEAN Datatype
@@ -215,9 +277,9 @@ Note that SQLite only knows `NULL`, `INTEGER`, `REAL`, `TEXT` and `BLOB`.
 This means that the actual implementation deviates from the model, which was deliberately kept database 
 agnostic.
 
-Importend Mappings are:
+Important Mappings are:
 
-| data type | SQLite represnentation   |
+| data type | SQLite representation    |
 |-----------|--------------------------|
 | `UUID`    | `INTEGER` / `TEXT`       |
 | `BOOLEAN` | `INTEGER`                |
@@ -255,10 +317,104 @@ erDiagram
        BIGINT root
        BIGINT[] leafs
     }
+
+   Nullifyer {
+      BIGINT root
+      BIGINT[] leafs
+   }
 ```
 
+### Object Relational Mapping (ORM) and Repository Pattern
+
+We are using the _ORM pattern_. In summary, this means that every class of objects that need to be stored
+maps to a corresponding table in our DB. 
+
+On top, we apply a _repository pattern_ that abstracts the interaction for each class and table.
+Wherefore the Table-Interface contains all functions that can be applied to the data of a table.
+E.g. `get_by_id()`, `insert()` or `delete()`. This decouples the classes completely from the database,
+because the class only have to implement the entity interface if you want to be able to store them.
+The Table-Interface corresponds to a function repository of the repository pattern.
+
+**To map a new class to the database, you need to take care of the following steps:**
+1. Create the corresponding table.
+   You can do so by adding a `CREATE TABLE` statement inside the `create_databse.sql` file.
+   1. If the table should be queryable by ID, the table has to contain such a column that is also named exactly 'ID'.
+2. Implement the Entity-Interface for the class you want to save.
+3. Instantiate a persistent service and a new Table in your code.
+   ```
+   let service = db_service::SQLiteService::new(db_path, "sfnft".to_string());
+   let table = db_service::Table::new(table_name, service);
+   ```
+   1. It may be necessary to extend the interface or the persistent service if you're introducing a
+      new query function.
+4. Now you can use the Table instance to store or load instances of the new class.
+   ```
+   let id = table.save(instance_of_your_class)?;
+   let instance_of_your_class = table.get_by_id(id)?;
+   ```
+
+Under the hood, the table makes use of a so-called 
+persistent service. Such a service takes care of the communication between repositories (tables) and the database.
+While, in general, you won't find and SQL code in repositories (tables) a persistent service implements the 
+specific SQL queries. So **in the case that the underlying database architecture is changed** it is only
+necessary to implement the persistent service interface for this new architecture. The repositories (tables) are
+generic with regard to the used persistent service, so they don't need to be re-implemented.
+
+## Network
+
+The following figure gives an overview of the structure of the network.
+Each node runs in its own Docker container (Except SQLite databases, as these are serverless).
+
+The backends are each Rust crates built from the project workspace, according to the feature set.
+
+The APIs provide all necessary functions for the communication with the Ledger Authority or other clients. 
+Any communication that does not have to take place on chain is explicitly separated from the Ledger 
+Authority.
+
+As a general interface for frontends in any language, the client backend provides an addon to integrate 
+the code into other languages.
+
+The client databases store NFTs and certificates, the Ledger Authority database stores the Merkle trees 
+for the shielded NFTs, trust list and Nullifyer.
+
+The off chain database stores messages between to enable asynchronous communication.
+If this is not necessary, this part can be replaced by peer to peer communication.
+
+```mermaid
+flowchart
+    subgraph Client2
+        cli2_backend["Backend"] <-->
+        cli2_db[("Database")]
+        cli2_backend <--> cli2_addon[["Frontend Addon"]] <-->
+        cli2_frontend("Frontend")
+    end
+    
+    subgraph OffChain
+        oc_api("API") <-->
+        oc_backend["Backend"] <-->
+        oc_db[("Database")]
+    end
+
+    subgraph Client1
+        cli1_backend <--> cli1_addon[["Frontend Addon"]] <-->
+        cli1_frontend("Frontend")
+        cli1_backend["Backend"] <-->
+        cli1_db[("Database")]
+    end
+
+    subgraph LedgerAuthority
+        la_db[("Database")] <-->
+        la_backend["Backend"] <-->
+        la_api("API")
+    end
+   
+    la_api <-- ZKP --> cli1_backend
+    la_api <-- ZKP --> cli2_backend
+    cli1_backend <-- NFT / Cert. --> oc_api
+    cli2_backend <-- NFT / Cert. --> oc_api
+```
 ***
 
 [^1]: [SQLite](https://www.sqlite.org/)
-[^2]: [sqlite crate](https://docs.rs/sqlite/latest/sqlite/)
+[^2]: [sqlite crate](https://docs.rs/sqlite/latest/sqlite/index.html)
 [^3]: [Quirks of SQLite](https://www.sqlite.org/quirks.html)
