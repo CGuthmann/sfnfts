@@ -1,10 +1,5 @@
 # SFNFTs 
 
-## Getting started
-[//]: <> (TODO: Readme Zusammenfassung)
-
-***
-
 ## Name
 Shielded Fractional NFTs
 
@@ -35,6 +30,10 @@ NFTs guarantee privacy and prevent double-counting. For this purpose, invalidate
 ownerships are stored with Merkletrees.
 They enable an anonymous ("shielded") transaction of the NFTs.
 The use of Merkletrees excludes the possibility of tracing back former ownerships.
+
+***
+
+# Getting started
 
 ## Installation
 
@@ -85,8 +84,31 @@ To uninstall rust run:
 rustup self uninstall
 ```
 
+### Docker
+
+We strongly recommend using the docker engine only!
+Installation guide for Ubuntu: [Install Docker](https://docs.docker.com/engine/install/ubuntu/)
+
 ### IDE
-[//]: <> (TODO: IDE Setup)
+
+#### VS Code (free)
+
+The Website of Visual Studio Code provides two detailed guides:
+1. Installing VS Code
+    1. [Windows](https://code.visualstudio.com/docs/setup/windows)
+    2. [Linux](https://code.visualstudio.com/docs/setup/linux)
+2. [Use Git in VS Code](https://code.visualstudio.com/docs/sourcecontrol/overview)
+3. [Use Rust in VS Code](https://code.visualstudio.com/docs/languages/rust)
+4. [Use Docker in VS Code](https://code.visualstudio.com/docs/containers/overview)
+5. [Use SQLite in VS Code](https://marketplace.visualstudio.com/items?itemName=alexcvzz.vscode-sqlite)
+
+#### IntelliJ (license required)
+
+1. Install the [JetBrains Toolbox](https://www.jetbrains.com/de-de/toolbox-app/)
+2. Install the IntelliJ IDE using the toolbox
+3. Install the [Rust Plugin](https://www.jetbrains.com/de-de/rust/) inside of IntelliJ 
+4. [Use Docker in IntelliJ](https://www.jetbrains.com/help/idea/docker.html)
+5. [Use SQLite in IntelliJ](https://www.jetbrains.com/help/idea/relational-databases.html)
 
 ## Test and Deploy
 [//]: <> (TODO: Zusammenfassung der Test-Wikipage und zum Compilen)
