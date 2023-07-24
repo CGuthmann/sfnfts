@@ -173,8 +173,8 @@ classDiagram
         +new(String db) PersistentService
         +create_db(String query)
         +close_connection()
-        +get_all(String table) HashMap~String, String~ []
-        +get_by_id(String table, BigInt id) HashMap~String, String~
+        +get_all(String table) HashMap~String~ []
+        +get_by_id(String table, BigInt id) HashMap~String~
         +save(String table, String[] columns, String[] values) BigInt
         +update() uint
         +delete(String table, BigInt id) uint
@@ -185,7 +185,7 @@ classDiagram
         - index_value_pair(String[] v) (uint, Value)[]
         - bind_values(String[] values, Statement stmt)
         - get_last_row_id() BigInt
-        - read_row(Statement stmt) Hashmap~String, String~
+        - read_row(Statement stmt) Hashmap~String~
     }
 ```
 
