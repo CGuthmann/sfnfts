@@ -338,7 +338,6 @@ The Table-Interface corresponds to a function repository of the repository patte
 **To map a new class to the database, you need to take care of the following steps:**
 1. Create the corresponding table.
    You can do so by adding a `CREATE TABLE` statement inside the `create_databse.sql` file.
-   1. If the table should be queryable by ID, the table has to contain such a column that is also named exactly 'ID'.
 2. Implement the Entity-Interface for the class you want to save.
 3. Instantiate a persistent service and a new Table in your code.
    ```
