@@ -7,18 +7,12 @@
 
 [//]: <> (TODO: No passwords in code, never!)
 
-## Documentation Guidelines
-- Every code file should start with a short introduction to its purpose.
-- Every function should be proceeded by a short description.
-- Complex code constructs or algorithms should be proceeded by a short explanation or reference to a source.
-- Use descriptive variable names.
-- Write whole sentences and use punctuation.
-- Don‘t pre-announce features.
-
 ## Limitations of this Guide
 It is important to note that we only discuss guidelines here. If your code is significantly improved by breaking a rule, this is recommended.
 
 ## Rust coding Guide
+- Use Clippy instead of Cargo check for code analysis
+
 - Use BigInt for generic Integer values.
     Rather than
     ```
