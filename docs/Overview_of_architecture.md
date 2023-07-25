@@ -420,7 +420,7 @@ data you return from endpoints, as well of as of the management of permissions w
 For all other functionality controllers make use of so-called **services** (or **providers**).
 
 You can think about controllers as extended interfaces. **Services** would be the implementation of such an interface.
-Services are seperated from controllers because they most likely will contain functions that could be used from other 
+Services are separated from controllers because they most likely will contain functions that could be used from other 
 services. Since **we don't want to send HTTP requests to use a specific function of our own API** (including permission 
 handling and authentication) we separate those functions in separate modules.
 The [documentation of NestJS](https://docs.nestjs.com/) provide general guidance for this idea.
@@ -451,7 +451,7 @@ classDiagram
 
 ### Data Transfer Object (DTO)
 
-DTO is a pattern to handle data transfer between seperated systems with unique data representations.
+DTO is a pattern to handle data transfer between separated systems with unique data representations.
 A DTO is used to encapsulate data, and send it from one subsystem of an application to another.
 In our case this is done by parsing the data to into a JSON format and send JSON-Strings through the network. 
 
