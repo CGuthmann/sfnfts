@@ -415,7 +415,7 @@ APIs consist out of **controllers** that handle the **endpoints** (or **routes**
 HTTP requests.
 
 **Controllers** take care of building the final reply and enforcing rules on permissions and authentication.
-**For sake of security and since rocket does not provide advanced technologies to handle this, be very aware about the 
+**For sake of security  be very aware about the 
 data you return from endpoints, as well of as of the management of permissions who can interact with these endpoints.**
 For all other functionality controllers make use of so-called **services** (or **providers**).
 
