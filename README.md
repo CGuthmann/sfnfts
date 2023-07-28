@@ -110,7 +110,11 @@ The Website of Visual Studio Code provides two detailed guides:
 4. [Use Docker in IntelliJ](https://www.jetbrains.com/help/idea/docker.html)
 5. [Use SQLite in IntelliJ](https://www.jetbrains.com/help/idea/relational-databases.html)
 
+### Docker
+
 ## Test and Deploy
+
+### Docker
 [//]: <> (TODO: Zusammenfassung der Test-Wikipage und zum Compilen)
 
 ## Usage
