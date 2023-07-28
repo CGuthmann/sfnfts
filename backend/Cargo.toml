@@ -2,5 +2,6 @@
 
 members = [
     "crypto",
-    "nft"
+    "nft",
+    "db_service"
 ]
