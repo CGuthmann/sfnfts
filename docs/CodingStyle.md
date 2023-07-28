@@ -8,7 +8,8 @@
 [//]: <> (TODO: No passwords in code, never!)
 
 ## Limitations of this Guide
-It is important to note that we only discuss guidelines here. If your code is significantly improved by breaking a rule, this is recommended.
+It is important to note that we only discuss guidelines here. If your code is significantly improved by breaking a rule, 
+this is recommended.
 
 ## Rust coding Guide
 - Use Clippy instead of Cargo check for code analysis
