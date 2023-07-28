@@ -1,0 +1,15 @@
+[package]
+name = "ledger_authority"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crypto = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
+heimdall = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
+ark-circom-service = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
+serde = { version = "1.0", features = ["derive"] }
+num-bigint = { version = "0.4",default-features = false, features = ["serde", "rand"]}
+num-traits = {version = "0.2.15",  default-features = false}
+rand = "0.8"

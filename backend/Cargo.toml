@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "ledger_authority",
     "crypto",
     "nft",
     "la_api",

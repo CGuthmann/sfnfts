@@ -1,0 +1,13 @@
+use std::env;
+
+fn main() {
+        println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/10/"); //path to libstdc++.a
+        println!("cargo:rustc-link-search=native=./nft/lib");
+
+        println!("cargo:rustc-link-lib=static=stdc++");
+        println!("cargo:rustc-link-lib=static=fr");
+        println!("cargo:rustc-link-lib=static=gmp");
+
+        println!("cargo:rustc-link-lib=static=nft_mint");
+
+}
