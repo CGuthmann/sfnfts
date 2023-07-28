@@ -1,0 +1,6 @@
+*.r1cs
+*.json
+*.ptau
+*.zkey
+*_cpp/
+*_js/
