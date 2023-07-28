@@ -3,5 +3,6 @@
 members = [
     "crypto",
     "nft",
+    "la_api",
     "db_service"
 ]
