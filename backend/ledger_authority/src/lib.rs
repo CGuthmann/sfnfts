@@ -3,13 +3,25 @@ use std::error::Error;
 use num_bigint::BigInt;
 use crypto::{merkle_tree::{HashTree,fill_vec}, HashFunction};
 use ark_circom_service::{ArkCircomFullProof,Bn254};
+use serde::{Deserialize, Serialize};
 
-
+#[derive(Debug,Deserialize,Serialize)]
 pub struct LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>{
+
+    #[serde(bound(
+        serialize = "HashTree<H,2>: Serialize",
+        deserialize = "HashTree<H,2>: Deserialize<'de>"
+    ))]
     pub tree: Vec<HashTree<H,BRANCHING_FACTOR>>,
+
     pub current_tree_index: usize,
     pub next_index: usize,
     pub tree_depth: u32,
+
+    #[serde(bound(
+        serialize = "HashTree<H,2>: Serialize",
+        deserialize = "HashTree<H,2>: Deserialize<'de>"
+    ))]
     pub trust_list: HashTree<H,2>,
     pub nullifier: Vec<BigInt>
 }
@@ -98,7 +110,7 @@ mod test{
     use num_traits::Num;
 
 
-    #[test]
+    
     fn ledger_authority_check(){
 
         let private_key = 
@@ -107,5 +119,18 @@ mod test{
         let ledger_authority = 
             LedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
         
+    }
+
+    #[test]
+    fn serialize_ledger_authority(){
+
+        let private_key = 
+        BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
+
+        let ledger_authority = 
+            LedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
+
+        let json = serde_json::to_string(&ledger_authority);
+        dbg!(json);
     }
 }

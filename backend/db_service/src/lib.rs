@@ -3,11 +3,12 @@
 //! Using `db_service`, all structs implementing the [Entity] trait can be stored in any database
 //! architecture for which a [PersistentService] is implemented.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 pub use std::marker::PhantomData;
 pub use num_bigint::BigInt;
+use std::error::Error;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 /// Enum of possible errors that may occur on interaction with the Database.
 /// The Errors contain a [String] of the error message.
 pub enum DatabaseError {
@@ -19,6 +20,14 @@ pub enum DatabaseError {
     AtQuery(String)
 }
 
+impl Display for DatabaseError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{}",self.to_string())
+    }
+}
+
+impl Error for DatabaseError{
+}
 //TODO: Entity has to know its id!
 /// All structs that should be able to be saved in the DB should implement this trait.
 /// The struct of type T must hold a field that stores the ID of the struct.

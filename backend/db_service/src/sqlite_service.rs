@@ -327,6 +327,7 @@ impl SQLiteService {
     }
 }
 
+unsafe impl Sync for SQLiteService{}
 #[cfg(test)]
 mod tests {
     use std::env::current_dir;

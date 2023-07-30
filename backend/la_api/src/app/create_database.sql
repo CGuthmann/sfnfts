@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS ledger_authority (json TEXT NOT NULL);

@@ -62,6 +62,7 @@ impl NFT for ShieldedFractionalNFT {
 
         let proof = proof_nft_mint(&json, None, None)?;
 
+        dbg!(serde_json::to_string(&proof));
         let index = ledger_authority.mint(&proof)?;
 
         nft.tree_index = index; //updates the merkle tree index stored in the nft
@@ -480,7 +481,6 @@ mod test {
             3,
             vec![
                 owner.to_string(),
-                "1".to_owned(),
                 "2".to_owned(),
                 "3".to_owned(),
                 "4".to_owned(),

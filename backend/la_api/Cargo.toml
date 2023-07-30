@@ -9,3 +9,9 @@ edition = "2021"
 rocket = { version = "0.5.0-rc.3", features = ["secrets", "tls", "json"] }
 num-bigint = { version = "0.4",default-features = false, features = ["serde", "rand"]}
 futures = { version = "0.3.28" }
+db_service = {path = "../db_service"}
+ledger_authority = {path = "../ledger_authority"}
+crypto = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.9"
+ark-circom-service = {git = "https://github.com/CGuthmann/heimdall-rs.git"}

@@ -2,7 +2,6 @@
 
 members = [
     "ledger_authority",
-    "crypto",
     "nft",
     "la_api",
     "db_service"
