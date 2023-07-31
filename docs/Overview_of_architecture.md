@@ -600,7 +600,7 @@ const lib = ffi.Library('example_lib', {add: ['int', ['int', 'int']]});
 console.log("Add: " + lib.add(2,5));
 ```
 
-### Java
+#### Java
 
 Java supports the usage of native libraries in its language core. all you have to do is to load the library and define 
 the signatures of the functions you want to use.
@@ -629,7 +629,7 @@ javac Test.java
 LD_LIBRARY_PATH=. java Test
 ```
  
-### Python 
+#### Python 
 
 In Python, you can import libraries using the `ctypes` package. But unlike in JS you don't need to link the functions by 
 hand. You can call them as methods of the imported library object.
@@ -640,7 +640,7 @@ lib = cdll.LoadLibrary("./libffi.so")
 print("Add: " + str(lib.add(2,5)))
 ```
 
-### C
+#### C
 
 The usage in C is very similar to Java, with the difference that you link the library at compile time.
 ```c

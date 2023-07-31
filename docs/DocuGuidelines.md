@@ -69,6 +69,15 @@ We are using the `ignore` attribute here because otherwise, the examples in the 
 whether they compile or not, and **will be executed** (use `no_run` to suppress this). Consider the official rust 
 documentation for more information on possible attributes and doc tests.
 
+### Generate the documentation as HTML page
+
+Rust creates a HTMl page from your docstrings. By passing the `--open` flag the documentation will show up in your 
+webbrowser once rust is finished.
+**We recommend to use this feature and write your docstrings accordingly.**
+```bash
+cargo doc --open
+```
+
 ## Further Reading
  - [Rust by example](https://doc.rust-lang.org/rust-by-example/meta/doc.html)
  - [The Rustdoc Book](https://doc.rust-lang.org/rustdoc/index.html)
