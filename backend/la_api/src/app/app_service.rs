@@ -66,8 +66,18 @@ pub async fn post_transfer(
     }
 }
 
-pub async fn post_burn() -> Result<(), &'static str> {
-    Err("Not implemented!")
+pub async fn post_burn(
+    proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
+) -> Result<bool, &'static str> {
+    match ledger_authority::get_ledger_authority() {
+        Ok(la) => {
+            match la.burn(&proof_json.into_inner()) {
+                Ok(res) => Ok(res),
+                Err(_) => Err("Burning failed."),
+            }
+        },
+        Err(_) => Err("Ledger authority currently unavailable."),
+    }
 }
 
 mod ledger_authority {
