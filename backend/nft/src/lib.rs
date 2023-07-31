@@ -16,7 +16,8 @@ pub trait NFT: Sized {
 
     fn transfer(&self, target: &BigInt) -> Result<Self, Box<dyn Error>>;
 
-    fn burn(&mut self) -> Result<bool, Box<dyn std::error::Error>>;
+    fn burn(&mut self,
+        ledger_authority: &mut LedgerAuthority<PoseidonHasher, 2>) -> Result<bool, Box<dyn std::error::Error>>;
 
     fn get_value(&self) -> BigInt;
 }

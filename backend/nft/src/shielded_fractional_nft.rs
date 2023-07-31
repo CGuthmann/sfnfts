@@ -8,7 +8,7 @@ use rand::thread_rng;
 
 use serde::{Deserialize, Serialize};
 
-use self::witness_generation::{mint::proof_nft_mint, transfer::proof_nft_transfer};
+use self::witness_generation::{mint::proof_nft_mint, transfer::proof_nft_transfer, burn::proof_nft_burn};
 
 use ledger_authority::LedgerAuthority;
 
@@ -74,13 +74,32 @@ impl NFT for ShieldedFractionalNFT {
         Err("Unsupported operation.")?
     }
 
-    fn burn(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
-        
+    fn burn(
+        &mut self,
+        ledger_authority: &mut LedgerAuthority<PoseidonHasher, 2>,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let merkle_proof =
+            ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
+
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+        self.append_flat_json(&mut json, &"".to_owned())?;
+
+        json.push_str(&format!(",\"pathNFT\":"));
+        append_json_vector(&mut json, &merkle_proof.path);
+
+        json.push_str(&format!(",\"lemmaNFT\":"));
+        append_json_vector(&mut json, &merkle_proof.lemma);
+
+        json.push('}');
+        let proof = proof_nft_burn(&json, None, None)?;
+
+        let result = ledger_authority.burn(&proof);
+
         self.consumed = true;
 
-        //TODO 
-
-        Ok(true)
+        result
     }
 
     fn get_value(&self) -> BigInt {
@@ -342,6 +361,112 @@ mod witness_generation {
         }
     }
 
+    pub mod burn {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_witness, ArkCircomFullProof, Bn254};
+        use witness_utils::{create::WITNESS_SIZE_GUESS, read::read_wtns};
+
+        //Link to external witness generation provided by witnesscalc
+        #[link(name = "nft_burn", kind = "static")]
+        extern "C" {
+            fn witnesscalc_nft_burn(
+                circuit_buffer: *const u8,
+                circuit_size: u64,
+                json_buffer: *const u8,
+                json_size: u64,
+                wtns_buffer: *mut u8,
+                wtns_size: *mut u64,
+                error_buffer: *mut u8,
+                error_msg_maxsize: u64,
+            ) -> i32;
+        }
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_burn(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let circuit = match circuit {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_burn.dat") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let mut wtns: Vec<u8> = Vec::with_capacity(WITNESS_SIZE_GUESS as usize);
+            let mut witness_size: u64 = WITNESS_SIZE_GUESS;
+
+            let mut error: Vec<u8> = Vec::with_capacity(200);
+
+            let mut result;
+            unsafe {
+                result = witnesscalc_nft_burn(
+                    circuit.as_ptr(),
+                    circuit.len() as u64,
+                    json.as_ptr(),
+                    json.len() as u64,
+                    wtns.as_mut_ptr(),
+                    &mut witness_size,
+                    error.as_mut_ptr(),
+                    200,
+                );
+            }
+
+            if result == 1 {
+                Err(result.to_string())?
+            } else if result == 2 {
+                wtns = Vec::with_capacity(witness_size as usize);
+                unsafe {
+                    result = witnesscalc_nft_burn(
+                        circuit.as_ptr(),
+                        circuit.len() as u64,
+                        json.as_ptr(),
+                        json.len() as u64,
+                        wtns.as_mut_ptr(),
+                        &mut witness_size,
+                        error.as_mut_ptr(),
+                        200,
+                    );
+                };
+
+                if result != 0 {
+                    Err(result.to_string())?
+                }
+            }
+            unsafe {
+                wtns.set_len(witness_size as usize);
+            }
+            let witness = read_wtns(&wtns);
+
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_burn.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let proof = create_proof_from_witness(&witness, &zkey)?;
+
+            Ok(proof)
+        }
+    }
+
     pub mod transfer {
         use super::*;
 
@@ -501,7 +626,7 @@ mod test {
             ShieldedFractionalNFT::new(&source, &value, &owner, &mut ledger_authority, &proof)
                 .unwrap();
 
-        let (nft_a, nft_b) = nft
+        let (mut nft_a,mut nft_b) = nft
             .transfer_split(
                 &owner,
                 [BigInt::from(1), BigInt::from(2)],
@@ -511,7 +636,9 @@ mod test {
             )
             .unwrap();
 
+        dbg!(nft_a.burn(&mut ledger_authority));
         dbg!(nft_a);
         dbg!(nft_b);
+
     }
 }

@@ -95,6 +95,21 @@ target_compile_definitions(witnesscalc_nft_mint PUBLIC CIRCUIT_NAME=nft_mint)
 target_compile_definitions(witnesscalc_nft_mintStatic PUBLIC CIRCUIT_NAME=nft_mint)
 target_compile_definitions(nft_mint PUBLIC CIRCUIT_NAME=nft_mint)
 
+# nft burning
+set(NFT_BURN_SOURCES ${LIB_SOURCES}
+    nft_burn.cpp
+    witnesscalc_nft_burn.h
+    witnesscalc_nft_burn.cpp
+    )
+add_library(witnesscalc_nft_burn SHARED ${NFT_BURN_SOURCES})
+add_library(witnesscalc_nft_burnStatic STATIC ${NFT_BURN_SOURCES})
+set_target_properties(witnesscalc_nft_burnStatic PROPERTIES OUTPUT_NAME nft_burn)
+add_executable(nft_burn main.cpp)
+target_link_libraries(nft_burn witnesscalc_nft_burnStatic)
+target_compile_definitions(witnesscalc_nft_burn PUBLIC CIRCUIT_NAME=nft_burn)
+target_compile_definitions(witnesscalc_nft_burnStatic PUBLIC CIRCUIT_NAME=nft_burn)
+target_compile_definitions(nft_burn PUBLIC CIRCUIT_NAME=nft_burn)
+
 # nft transfering
 set(NFT_TRANSFER_SOURCES ${LIB_SOURCES}
     nft_transfer.cpp

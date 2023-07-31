@@ -37,7 +37,10 @@ install(TARGETS
     witnesscalc_poseidon_benchStatic
     nft_mint
     witnesscalc_nft_mint
-    witnesscalc_nft_transferStatic
+    witnesscalc_nft_mintStatic
+    nft_burn
+    witnesscalc_nft_burn
+    witnesscalc_nft_burnStatic
     nft_transfer
     witnesscalc_nft_transfer
     witnesscalc_nft_transferStatic
@@ -51,6 +54,7 @@ install(FILES "${GMP_LIB_DIR}/${GMP_LIB_FILE}"
 
 install(FILES
     src/nft_mint.dat
+    src/nft_burn.dat
     src/nft_transfer.dat
     src/poseidon_bench.dat
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
@@ -58,6 +62,7 @@ install(FILES
 install(FILES
     src/witnesscalc.h
     src/witnesscalc_nft_mint.h
+    src/witnesscalc_nft_burn.h
     src/witnesscalc_nft_transfer.h
     src/witnesscalc_poseidon_bench.h
     DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
