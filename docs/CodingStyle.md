@@ -16,79 +16,79 @@ this is recommended.
 
 - Use BigInt for generic Integer values.
     Rather than
-    ```
+    ```rust
     {
-        ...
+        /* ... */
         let my_values = [i32;3];
-        ...
+        /* ... */
     }
     ```
     use 
-    ```
+    ```rust
     {
-        ... 
+        /* ... */ 
         let my_values = [BigInt;3];
-        ...
+        /* ... */
     }
     ```
 - Always return Results.
 
     Rather than
-    ```
+    ```rust
     fn div(a: BigInt, b: BigInt) -> BigInt {
         if b.is_zero() {
             panic!("Dividing by zero!");
         }
-        ...
+        /* ... */
     }
     ```
     use 
-    ```
+    ```rust
     fn div(a: BigInt, b: BigInt) -> Result<BigInt,Box<dyn Error>> {
         if b.is_zero() {
             Err("Dividing by zero!")?;
         }
-        ...
+        /* ... */
     }
     ```
 - Handle Results and avoid using unwrap.
 
     Rather than
-    ```
+    ```rust
     {
-        ...
+        /* ... */
         let d = div(3,5).unwrap();
-        ...
+        /* ... */
     }
     ```
     use 
-    ```
+    ```rust
     {
-        ...
+        /* ... */
         let d = match div(3,5) {
              Ok(x) => x,
              Err(_) => 0    //defines a/0 := 0
         }
-        ...
+        /* ... */
     }
     ```
 - Avoid using unsafe code wherever possible.
 - Specify crate versions (or git commits) in the dependencies. This helps to reduce the risk of dependency mismatches
 
     Rather than
-    ```
+    ```rust
     {
-        ...
+        /* ... */
         num-bigint = {default-features = false, features = ["serde"]}
-        ...
+        /* ... */
     }
     ```
     use 
-    ```
+    ```rust
     {
-        ...
+        /* ... */
         num-bigint = { version = "0.4",default-features = false, features = ["serde"]}
-        ...
+        /* ... */
     }
 - Frequently update dependencies to take advantage of the newest features and bug fixes.
   

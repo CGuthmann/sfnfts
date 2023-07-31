@@ -24,7 +24,7 @@ functions typically perform these three actions:
 **Unit tests are located in the same file as the code they test.** If you create your files with the
 `cargo new` command, cargo will handle this. Otherwise, add a module named `tests` according to the
 following template to your file:
-```
+```rust
 #[cfg(test)]
 mod tests {
     
@@ -33,7 +33,7 @@ mod tests {
     
     #[test]
     fn some_test() {
-        ...
+        /* ... */
     }
 }
 ```
@@ -48,21 +48,21 @@ You can run the test with the `cargo test` command. And run a specific test by e
 
 Sometimes, you may want to write tests that you expect to fail. To do so, annotate the test function with
 `#[should_panik]` like this:
-```
+```rust
 #[test]
 #[should_panic]
 fn some_test() {
-    ...
+    /* ... */
 }
 ```
 
 It can also happen that individual tests take a very long time to complete, and you don't want
 to run them every time together with the other tests. Such tests can be annotated with `#[ignore]`:
-```
+```rust
 #[test]
 #[ignore]
 fn some_test() {
-    ...
+    /* ... */
 }
 ```
 
@@ -92,13 +92,13 @@ crate_root
 
 The test functions for integration tests are written just like unit tests. But **they are not located in a
 `tests` module and we must import the code we want to test**.
-```
+```rust
 // importing the module
 use my_module;
 
 #[test]
 fn some_integration_test() {
-    ...
+    /* ... */
 }
 ```
 

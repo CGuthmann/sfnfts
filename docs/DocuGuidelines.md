@@ -20,11 +20,11 @@
 
 ### Docstring Types
 Rust knows _inner_ and _outer_ docstrings. You can apply them like this:
-```
+```rust
 /// This is an outer docstring
 struct my_struct {/* ... */}
 ```
-```
+```rust
 struct my_struct {
     //! This is an inner docstring
     /* ... */
@@ -38,7 +38,7 @@ Rust allows us to write the docstring in a markdown dialect.
 Because of this, please use the following template to document your functions.
 You may leave out unnecessary sections.
 
-```
+```rust
 /// <A brief description goes here>
 /// Link used functions and Structs like this:
 ///  - [`String`] for things that are in scope

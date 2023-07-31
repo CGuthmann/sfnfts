@@ -470,20 +470,20 @@ api_root
 
 - The `main.rs` file imports all modules and contains the launch function for rust, which binds the routes for each
   controller.
-```
+```rust
 #[launch]
 fn rocket() -> _ { /*...*/ }
 ```
 
 - `mod.rs` files **reexport** all controllers of the module as well as all services you want to use in other modules.
-```
+```rust
 pub mod some_controller; // reexport all controllers
 pub mod some_service; // reexport services
 ```
 
 - `*_controller.rs` files import their used services from `mod.rs` and implement routes.
 You may also want to define the `BASE`-Route of the controller here.
-```
+```rust
 use super::some_service;
 pub const BASE: &str = "/";
 ```
@@ -539,7 +539,7 @@ of data representation and processing over an ABI can be wrapped into a library 
 fooled, especially the "characteristics" part can be tricky, depending on the languages that should be supported.
 More detailed explanations and hints on what to watch out for can be found under the listed sources in the
 [Further reading](#Further-reading) section.
-```
+```rust
 #[repr(C)]
 struct my_struct { /* ... */ }
 
@@ -562,7 +562,7 @@ The following two files build a minimal working example for a dynamic library wr
 `crate-type` attribute inside the `Cargo.toml` file you can compile this lib simply by using `cargo build`.
 
 - `Cargo.toml`
-```
+```rust
 [package]
 name = "example_lib"
 version = "0.1.0"
@@ -575,7 +575,7 @@ edition = "2021"
 crate-type = ["dylib"]
 ```
 - `src/lib.rs`
-```
+```rust
 #[no_mangle]
 pub extern "C" fn add(left: usize, right: usize) -> usize {
     left + right
@@ -619,13 +619,13 @@ class Test {
 ```
 
 - To compile this you can simply run 
-```
+```bash
 javac Test.java
 ```
 
 - Since `System.loadLibrary()` takes the **library name as parameter not the path** you might have to run it using the 
 `LD_LIBRARY_PATH` environment variable to provide the path to the library on runtime.
-```
+```bash
 LD_LIBRARY_PATH=. java Test
 ```
  
@@ -633,7 +633,7 @@ LD_LIBRARY_PATH=. java Test
 
 In Python, you can import libraries using the `ctypes` package. But unlike in JS you don't need to link the functions by 
 hand. You can call them as methods of the imported library object.
-```
+```python
 from ctypes import *
 
 lib = cdll.LoadLibrary("./libffi.so")
@@ -643,7 +643,7 @@ print("Add: " + str(lib.add(2,5)))
 ### C
 
 The usage in C is very similar to Java, with the difference that you link the library at compile time.
-```
+```c
 #include <stdio.h>
 
 extern unsigned add(unsigned a, unsigned b);
@@ -655,12 +655,12 @@ int main() {
 ```
 
 Link the library using the `-l` flag like this and provide the path using the `-L` flag:
-```
+```bash
 gcc example.c - o example -lexample_library -L<path>
 ```
 
 You can execute the program using the `LD_LIBRARY_PATH` environment variable
-```
+```bash
 LD_LIBRARY_PATH=. ./example 
 ```
 
