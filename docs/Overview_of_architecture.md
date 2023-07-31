@@ -606,7 +606,7 @@ Java supports the usage of native libraries in its language core. all you have t
 the signatures of the functions you want to use.
 ```java
 class Test {
-    statix {
+    static {
         System.loadLibrary("example_lib");
     }
 
