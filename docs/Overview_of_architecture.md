@@ -534,13 +534,15 @@ hardware-dependent format. In contrast, an _API_ defines this access in source c
 
 ### Write and build a library for FFI
 
-Dangerously summarized: Any function annotated in the following manner that respects all the characteristics
+Dangerously summarized: Any struct or function annotated in the following manner that respects all the characteristics
 of data representation and processing over an ABI can be wrapped into a library and used outside of rust. Don't be
 fooled, especially the "characteristics" part can be tricky, depending on the languages that should be supported.
 More detailed explanations and hints on what to watch out for can be found under the listed sources in the
 [Further reading](#Further-reading) section.
 ```
 #[repr(C)]
+struct my_struct { /* ... */ }
+
 #[no_mangle]
 pub extern "C" fn call_from_outside() { /* ... */ }
 ```
@@ -550,8 +552,117 @@ To compile the library for your system, you have to compile the crate using the 
 
 ### Calling Rust Functions from Other Languages
 
-In the future, we will provide a guide for common languages here, but for now, the search string _"include a dynamic
-C-style system library in ..."_, along with the search engine of your choice, might be a good starting point.
+As it may happen in the future that other functions than the ones provided by us are needed, or it is not directly clear 
+how they could be used in other languages, we describe a minimal working example here. You can use it as a guideline 
+together with the existing code to extend the library.
+
+#### Minimal Rust library
+
+The following two files build a minimal working example for a dynamic library written in rust. Because of the 
+`crate-type` attribute inside the `Cargo.toml` file you can compile this lib simply by using `cargo build`.
+
+- `Cargo.toml`
+```
+[package]
+name = "example_lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+/* ... */
+
+[lib]
+crate-type = ["dylib"]
+```
+- `src/lib.rs`
+```
+#[no_mangle]
+pub extern "C" fn add(left: usize, right: usize) -> usize {
+    left + right
+}
+```
+
+#### JavaScript
+
+In JS all you need to execute functions from the library **inside a node.js environment** is the 
+[`ffi-napi` package](https://www.npmjs.com/package/ffi-napi/v/4.0.3). You can install using:
+```
+npm install ffi-napi
+```
+To import the library use the package and link the functions using the `Library()` function.
+The arguments are the path to the library (you can omit the `.so` or `.dll` prefix) and a dictionary of all functions
+you want to use. Use the function names as keys, the values is an array of the return type and a nested array of the 
+parameter types.
+```javascript
+const ffi = require('ffi-napi');
+const lib = ffi.Library('example_lib', {add: ['int', ['int', 'int']]});
+
+console.log("Add: " + lib.add(2,5));
+```
+
+### Java
+
+Java supports the usage of native libraries in its language core. all you have to do is to load the library and define 
+the signatures of the functions you want to use.
+```java
+class Test {
+    statix {
+        System.loadLibrary("example_lib");
+    }
+
+    native int add(int a, int b);
+
+    public static void main(String args[]) {
+        System.out.println("Add: " + new Test().add(2, 3));
+    }
+}
+```
+
+- To compile this you can simply run 
+```
+javac Test.java
+```
+
+- Since `System.loadLibrary()` takes the **library name as parameter not the path** you might have to run it using the 
+`LD_LIBRARY_PATH` environment variable to provide the path to the library on runtime.
+```
+LD_LIBRARY_PATH=. java Test
+```
+ 
+### Python 
+
+In Python, you can import libraries using the `ctypes` package. But unlike in JS you don't need to link the functions by 
+hand. You can call them as methods of the imported library object.
+```
+from ctypes import *
+
+lib = cdll.LoadLibrary("./libffi.so")
+print("Add: " + str(lib.add(2,5)))
+```
+
+### C
+
+The usage in C is very similar to Java, with the difference that you link the library at compile time.
+```
+#include <stdio.h>
+
+extern unsigned add(unsigned a, unsigned b);
+
+int main() {
+    printf("add: %d\n", add(2,2));
+    return 0;
+}
+```
+
+Link the library using the `-l` flag like this and provide the path using the `-L` flag:
+```
+gcc example.c - o example -lexample_library -L<path>
+```
+
+You can execute the program using the `LD_LIBRARY_PATH` environment variable
+```
+LD_LIBRARY_PATH=. ./example 
+```
 
 ### We are sorry!
 
@@ -563,7 +674,6 @@ So - just to be safe - we want to apologize in advance if this code might cause 
 impact on your coding experience.
 
 **Believe us, we tried our very best!**
-
 
 ### Further reading
 
