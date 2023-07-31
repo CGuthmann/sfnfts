@@ -16,7 +16,7 @@ pub trait NFT: Sized {
 
     fn transfer(&self, target: &BigInt) -> Result<Self, Box<dyn Error>>;
 
-    fn burn(&self);
+    fn burn(&mut self) -> Result<bool, Box<dyn std::error::Error>>;
 
     fn get_value(&self) -> BigInt;
 }

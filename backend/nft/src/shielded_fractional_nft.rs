@@ -19,7 +19,7 @@ pub struct ShieldedFractionalNFT {
     public_key_owner: BigInt,
     total_quantity: BigInt,
     fraction: [BigInt; 2],
-    cosumed: bool,
+    consumed: bool,
     salt: BigInt,
     tree_index: (usize, usize),
 }
@@ -41,7 +41,7 @@ impl NFT for ShieldedFractionalNFT {
                 BigInt::from_str("1").unwrap(),
                 BigInt::from_str("1").unwrap(),
             ],
-            cosumed: false,
+            consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
         };
@@ -74,8 +74,13 @@ impl NFT for ShieldedFractionalNFT {
         Err("Unsupported operation.")?
     }
 
-    fn burn(&self) {
-        todo!()
+    fn burn(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
+        
+        self.consumed = true;
+
+        //TODO 
+
+        Ok(true)
     }
 
     fn get_value(&self) -> BigInt {
@@ -103,7 +108,7 @@ impl FractionalNFT for ShieldedFractionalNFT {
             total_quantity: self.total_quantity.clone(),
             public_key_owner: target_a.clone(),
             fraction: [nom.clone(), denom.clone()],
-            cosumed: false,
+            consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
         };
@@ -112,7 +117,7 @@ impl FractionalNFT for ShieldedFractionalNFT {
             total_quantity: self.total_quantity.clone(),
             public_key_owner: target_b.clone(),
             fraction: [total_nom - nom, denom],
-            cosumed: false,
+            consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
         };
@@ -192,7 +197,7 @@ impl ShieldedFractionalNFT {
         json.push_str(&format!(
             "\"{}consumed\":\"{:?}\",",
             prefix,
-            if self.cosumed { 1 } else { 0 }
+            if self.consumed { 1 } else { 0 }
         ));
 
         json.push_str(&format!("\"{}salt\":\"{:?}\"", prefix, self.salt));

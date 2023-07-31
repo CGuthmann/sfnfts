@@ -62,6 +62,26 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
         Ok((self.current_tree_index,self.next_index -1))
     }
 
+    ///Burns a nft
+    /// 
+    /// # Arguments
+    /// 
+    /// * 'proof' - A ZKP proofing the validity of the NFT burn (nft_burn)
+    pub fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    -> Result<bool,Box<dyn Error>>{
+
+        if self.nullifier.contains(&proof.outputs[1]){
+            Err("Nullified nft!")?
+        }
+
+        if proof.verify()? == false {
+            Err("Invalid proof!")?
+        }
+        self.tree[proof.outputs[0].to_string().parse::<usize>()?].update(self.next_index,proof.outputs[1].to_string());
+
+        Ok(true)
+    }
+
     ///Transfers and splits an nft to two parties and returns the merkle tree indices
     /// 
     /// # Arguments
@@ -69,6 +89,11 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     /// * 'proof' - A ZKP proofing the validity of the new NFT (nft_transfer)
     pub fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>{
+
+        if self.nullifier.contains(&proof.outputs[0]){
+            Err("Nullified nft!")?
+        }
+
         if proof.verify()? == false {
             Err("Invalid proof!")?
         }
@@ -83,9 +108,13 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[4].to_string());
         self.next_index += 1;
 
+        self.nullifier.push(proof.outputs[0].clone());
+
         Ok(((self.current_tree_index,self.next_index -2),(self.current_tree_index,self.next_index -1)))       
         
     }
+
+
 
     pub fn get_tree(&self) -> &Vec<HashTree<H,BRANCHING_FACTOR>>{
         &self.tree
