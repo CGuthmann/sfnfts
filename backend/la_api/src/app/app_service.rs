@@ -2,10 +2,10 @@
 
 use std::{env::current_dir, fs::remove_file};
 
+use crypto::{merkle_tree::HashTree, poseidon::PoseidonHasher};
 use db_service::{sqlite_service::SQLiteService, PersistentService, Table};
 use num_bigint::BigInt;
 use rocket::serde::json::Json;
-
 //TODO: unsure about error handling
 //  - forward errors from deep backend until they reach the api?
 //      or return a error response as soon as possible?
@@ -18,21 +18,17 @@ pub async fn get_nullifier() -> Result<Vec<BigInt>, &'static str> {
     }
 }
 
-pub async fn get_trust_list() -> Result<Vec<String>, &'static str> {
+pub async fn get_trust_list() -> Result<HashTree<PoseidonHasher,2>, &'static str> {
     match ledger_authority::get_ledger_authority() {
-        Ok(la) => Ok(la.get_trust_list().leaves.clone()),
+        Ok(la) => Ok(la.get_trust_list()),
         Err(_) => Err("Ledger authority currently unavailable."),
     }
 }
 
-pub async fn get_merkle_tree() -> Result<Vec<Vec<String>>, &'static str> {
+pub async fn get_merkle_tree() -> Result<Vec<HashTree<PoseidonHasher,2>>, &'static str> {
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
-            let mut leaves: Vec<Vec<String>> = Vec::new();
-            for tree in la.get_tree() {
-                leaves.push(tree.leaves.clone());
-            }
-            Ok(leaves)
+            Ok(la.get_tree())
         }
         Err(_) => Err("Ledger authority currently unavailable."),
     }
@@ -68,7 +64,7 @@ pub async fn post_transfer(
 
 pub async fn post_burn(
     proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
-) -> Result<bool, &'static str> {
+) -> Result<(), &'static str> {
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
             match la.burn(&proof_json.into_inner()) {
@@ -93,12 +89,12 @@ mod ledger_authority {
         poseidon::PoseidonHasher,
     };
     use db_service::{sqlite_service::SQLiteService, DatabaseError, PersistentService};
-    use ledger_authority::LedgerAuthority;
+    use ledger_authority::{DefaultLedgerAuthority, LedgerAuthority};
 
-    static mut LA: Option<LedgerAuthority<PoseidonHasher, 2>> = None;
+    static mut LA: Option<DefaultLedgerAuthority<PoseidonHasher, 2>> = None;
 
     pub fn get_ledger_authority(
-    ) -> Result<&'static mut LedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
+    ) -> Result<&'static mut dyn LedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
         unsafe {
             match &mut LA {
                 Some(la) => Ok(la),
@@ -110,7 +106,7 @@ mod ledger_authority {
         }
     }
 
-    fn init_ledger_authority() -> Result<LedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
+    fn init_ledger_authority() -> Result<DefaultLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
         let db = db::get_db()?;
 
         let la_json_res = db.get_all("ledger_authority")?;
@@ -120,7 +116,7 @@ mod ledger_authority {
         if la_json_res.is_empty() {
             let trust_list = lines_from_file("trust_list");
 
-            let la = LedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
+            let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
 
             return Ok(la);
         }
@@ -128,7 +124,7 @@ mod ledger_authority {
         match la_json_res[0].get("json") {
             Some(res) => match res {
                 Some(la_json) => {
-                    let la: LedgerAuthority<PoseidonHasher, 2> = serde_json::from_str(&la_json)?;
+                    let la: DefaultLedgerAuthority<PoseidonHasher, 2> = serde_json::from_str(&la_json)?;
                     return Ok(la);
                 }
                 None => (),
@@ -138,7 +134,7 @@ mod ledger_authority {
 
         let trust_list = lines_from_file("trust_list");
 
-        let la = LedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
+        let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
 
         Ok(la)
     }

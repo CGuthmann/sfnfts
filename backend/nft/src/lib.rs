@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crypto::{poseidon::PoseidonHasher, merkle_tree::MerkleProof};
-use ledger_authority::LedgerAuthority;
+use ledger_authority::{DefaultLedgerAuthority, LedgerAuthority};
 use num_bigint::BigInt;
 
 
@@ -11,13 +11,13 @@ pub mod shielded_fractional_nft;
 pub trait NFT: Sized {
     //Instatiates a new NFT.
     fn new(source: &BigInt, value: &BigInt, owner: &BigInt,
-         ledger_authority: & mut LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>) 
+         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>) 
          -> Result<Self,Box<dyn Error>> ;
 
-    fn transfer(&self, target: &BigInt) -> Result<Self, Box<dyn Error>>;
+    fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt) -> Result<Self, Box<dyn Error>>;
 
     fn burn(&mut self,
-        ledger_authority: &mut LedgerAuthority<PoseidonHasher, 2>) -> Result<bool, Box<dyn std::error::Error>>;
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>) -> Result<(), Box<dyn std::error::Error>>;
 
     fn get_value(&self) -> BigInt;
 }
@@ -30,7 +30,7 @@ pub trait FractionalNFT: NFT {
         fraction: [BigInt; 2],
         target_a: &BigInt,
         target_b: &BigInt,
-        ledger_authority: &mut LedgerAuthority<PoseidonHasher,2>
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>
     ) -> Result<(Self,Self), Box<dyn Error>>;
 }
 

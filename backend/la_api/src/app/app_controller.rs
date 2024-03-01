@@ -1,4 +1,8 @@
 //! The main controller for "/" routes.
+use std::hash::Hash;
+
+use crypto::merkle_tree::HashTree;
+use crypto::poseidon::PoseidonHasher;
 use num_bigint::BigInt;
 use rocket::http::Status;
 use rocket::serde::json::Json;
@@ -43,9 +47,9 @@ pub async fn get_nullifier() -> Result<Json<Vec<BigInt>>, (Status, &'static str)
 }
 
 #[get("/trust_list")]
-pub async fn get_trust_list() -> Result<Json<Vec<String>>, (Status, &'static str)> {
+pub async fn get_trust_list() -> Result<Json<HashTree<PoseidonHasher,2>>, (Status, &'static str)> {
     if let Ok(val) = app_service::get_trust_list().await {
-        if val.is_empty() {
+        if val.leaves.is_empty() {
             Err((
                 Status::NotFound,
                 "There is no trust list entry in the database.",
@@ -62,7 +66,7 @@ pub async fn get_trust_list() -> Result<Json<Vec<String>>, (Status, &'static str
 }
 
 #[get("/merkle_tree")]
-pub async fn get_merkle_tree() -> Result<Json<Vec<Vec<String>>>, (Status, &'static str)> {
+pub async fn get_merkle_tree() -> Result<Json<Vec<HashTree<PoseidonHasher,2>>>, (Status, &'static str)> {
     if let Ok(val) = app_service::get_merkle_tree().await {
         if val.is_empty() {
             Err((
@@ -107,10 +111,10 @@ pub async fn post_transfer(
 #[post("/burn", format = "json", data = "<proof>")]
 pub async fn post_burn(
     proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
-) -> Result<Json<bool>, Status> {
+) -> Result<Status, Status> {
     let status= app_service::post_burn(proof).await;
     match status {
-        Ok(res) => Ok(Json(res)),
+        Ok(res) => Ok(Status::Accepted),
         Err(_) => Err(Status::InternalServerError),
     }
 }

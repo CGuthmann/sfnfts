@@ -5,8 +5,25 @@ use crypto::{merkle_tree::{HashTree,fill_vec}, HashFunction};
 use ark_circom_service::{ArkCircomFullProof,Bn254};
 use serde::{Deserialize, Serialize};
 
+pub mod remote_ledger_authority;
+
+pub trait LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize> {
+    fn mint(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    -> Result<(usize,usize),Box<dyn Error>>;
+
+    fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>;
+
+    fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    -> Result<(),Box<dyn Error>>;
+
+    fn get_tree(&self) -> Vec<HashTree<H,BRANCHING_FACTOR>>;  
+    fn get_trust_list(&self)-> HashTree<H,2>;
+    fn get_nullifier(&self) -> Vec<BigInt>;
+}
+
 #[derive(Debug,Deserialize,Serialize)]
-pub struct LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>{
+pub struct DefaultLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>{
 
     #[serde(bound(
         serialize = "HashTree<H,2>: Serialize",
@@ -26,8 +43,7 @@ pub struct LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>{
     pub nullifier: Vec<BigInt>
 }
 
-impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_FACTOR>  {
-
+impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRANCHING_FACTOR>  {
     ///Initializes a new ledger authority
     pub fn new(tree_depth: u32, mut trust_list: Vec<String>)
     -> Self{
@@ -36,7 +52,7 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
 
         fill_vec(&mut trust_list, 2);
 
-        return LedgerAuthority{
+        return DefaultLedgerAuthority{
             tree: vec![HashTree::<H,BRANCHING_FACTOR>::new(&leaves)],
             current_tree_index: 0,
             next_index: 0,
@@ -45,13 +61,16 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
             nullifier: Vec::new()
         };
     }
+}
+
+impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_FACTOR> for DefaultLedgerAuthority<H,BRANCHING_FACTOR>  {
 
     ///Mints a new nft and returns its index in the merkle tree
     /// 
     /// # Arguments
     /// 
     /// * 'proof' - A ZKP proofing the validity of the new NFT (nft_mint)
-    pub fn mint(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    fn mint(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<(usize,usize),Box<dyn Error>>{
         if proof.verify()? == false {
             Err("Invalid proof!")?
@@ -67,8 +86,8 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     /// # Arguments
     /// 
     /// * 'proof' - A ZKP proofing the validity of the NFT burn (nft_burn)
-    pub fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
-    -> Result<bool,Box<dyn Error>>{
+    fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    -> Result<(), Box<dyn Error>>{
 
         if self.nullifier.contains(&proof.outputs[1]){
             Err("Nullified nft!")?
@@ -79,7 +98,7 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
         }
         self.tree[proof.outputs[0].to_string().parse::<usize>()?].update(self.next_index,proof.outputs[1].to_string());
 
-        Ok(true)
+        Ok(())
     }
 
     ///Transfers and splits an nft to two parties and returns the merkle tree indices
@@ -87,7 +106,7 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     /// # Arguments
     /// 
     /// * 'proof' - A ZKP proofing the validity of the new NFT (nft_transfer)
-    pub fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>{
 
         if self.nullifier.contains(&proof.outputs[0]){
@@ -116,16 +135,16 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
 
 
 
-    pub fn get_tree(&self) -> &Vec<HashTree<H,BRANCHING_FACTOR>>{
-        &self.tree
+    fn get_tree(&self) -> Vec<HashTree<H,BRANCHING_FACTOR>>{
+        self.tree.clone()
     }
     
-    pub fn get_trust_list(&self)-> &HashTree<H,2>{
-        &self.trust_list
+    fn get_trust_list(&self)-> HashTree<H,2>{
+        self.trust_list.clone()
     }
 
-    pub fn get_nullifier(&self) -> &Vec<BigInt>{
-        &self.nullifier
+    fn get_nullifier(&self) -> Vec<BigInt>{
+        self.nullifier.clone()
     }
 
 }
@@ -146,7 +165,7 @@ mod test{
         BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
 
         let ledger_authority = 
-            LedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
+            DefaultLedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
         
     }
 
@@ -157,7 +176,7 @@ mod test{
         BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
 
         let ledger_authority = 
-            LedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
+            DefaultLedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
 
         let json = serde_json::to_string(&ledger_authority);
         dbg!(json);
