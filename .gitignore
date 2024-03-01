@@ -1,3 +1,4 @@
 Cargo.lock
 backend/target
 *.db
+*.sqlite

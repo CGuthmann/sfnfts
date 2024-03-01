@@ -6,6 +6,8 @@ use crypto::{merkle_tree::HashTree, poseidon::PoseidonHasher};
 use db_service::{sqlite_service::SQLiteService, PersistentService, Table};
 use num_bigint::BigInt;
 use rocket::serde::json::Json;
+
+use self::ledger_authority::save_ledger_authority;
 //TODO: unsure about error handling
 //  - forward errors from deep backend until they reach the api?
 //      or return a error response as soon as possible?
@@ -40,7 +42,13 @@ pub async fn post_mint(
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
             match la.mint(&proof_json.into_inner()) {
-                Ok(res) => Ok(res),
+                Ok(res) => {
+                    match save_ledger_authority() {
+                        Ok(_) =>  Ok(res),
+                        Err(_) => Err("Minting failed."),
+                    }
+                   
+                },
                 Err(_) => Err("Minting failed."),
             }
         },
@@ -54,8 +62,13 @@ pub async fn post_transfer(
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
             match la.transfer(&proof_json.into_inner()) {
-                Ok(res) => Ok(res),
-                Err(_) => Err("Minting failed."),
+                Ok(res) => {
+                    match save_ledger_authority() {
+                        Ok(_) =>  Ok(res),
+                        Err(_) => Err("Transfer failed."),
+                    }
+                },
+                Err(_) => Err("Transfer failed."),
             }
         },
         Err(_) => Err("Ledger authority currently unavailable."),
@@ -68,7 +81,12 @@ pub async fn post_burn(
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
             match la.burn(&proof_json.into_inner()) {
-                Ok(res) => Ok(res),
+                Ok(res) => {
+                    match save_ledger_authority() {
+                        Ok(_) =>  Ok(res),
+                        Err(_) => Err("Burning failed."),
+                    }
+                },
                 Err(_) => Err("Burning failed."),
             }
         },
@@ -81,7 +99,7 @@ mod ledger_authority {
         error::Error,
         fs::File,
         io::{BufRead, BufReader},
-        path::Path,
+        path::Path, str::FromStr,
     };
 
     use crypto::{
@@ -90,6 +108,7 @@ mod ledger_authority {
     };
     use db_service::{sqlite_service::SQLiteService, DatabaseError, PersistentService};
     use ledger_authority::{DefaultLedgerAuthority, LedgerAuthority};
+    use num_bigint::BigInt;
 
     static mut LA: Option<DefaultLedgerAuthority<PoseidonHasher, 2>> = None;
 
@@ -106,6 +125,21 @@ mod ledger_authority {
         }
     }
 
+    pub fn save_ledger_authority()
+    -> Result<(), Box<dyn Error>>{
+        unsafe { 
+            match &LA  {
+                Some(la) => {
+                    let json = serde_json::to_string(la)?;
+                    let db = db::get_db()?;
+                    db.update("ledger_authority", &BigInt::from_str("0")?, vec!["json".to_string()], vec![json])?;
+                    Ok(())
+                },
+                None => Ok(()),
+            }
+        }
+    }
+
     fn init_ledger_authority() -> Result<DefaultLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
         let db = db::get_db()?;
 
@@ -117,6 +151,8 @@ mod ledger_authority {
             let trust_list = lines_from_file("trust_list");
 
             let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
+
+            db.save("ledger_authority", vec!["ID".to_string(), "json".to_string()], vec!["0".to_string(), serde_json::to_string(&la)?])?;
 
             return Ok(la);
         }
@@ -166,7 +202,7 @@ mod ledger_authority {
         }
 
         fn init_db() -> SQLiteService {
-            let service = SQLiteService::new("ledger_authority.db");
+            let service = SQLiteService::new("ledger_authority.sqlite");
             let query = String::from(include_str!("create_database.sql"));
             service.create_db(query).unwrap();
 
