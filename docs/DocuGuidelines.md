@@ -20,11 +20,11 @@
 
 ### Docstring Types
 Rust knows _inner_ and _outer_ docstrings. You can apply them like this:
-```
+```rust
 /// This is an outer docstring
 struct my_struct {/* ... */}
 ```
-```
+```rust
 struct my_struct {
     //! This is an inner docstring
     /* ... */
@@ -38,7 +38,7 @@ Rust allows us to write the docstring in a markdown dialect.
 Because of this, please use the following template to document your functions.
 You may leave out unnecessary sections.
 
-```
+```rust
 /// <A brief description goes here>
 /// Link used functions and Structs like this:
 ///  - [`String`] for things that are in scope
@@ -68,6 +68,15 @@ fn my_func() { /* ... */ }
 We are using the `ignore` attribute here because otherwise, the examples in the docstrings are tested to determine
 whether they compile or not, and **will be executed** (use `no_run` to suppress this). Consider the official rust 
 documentation for more information on possible attributes and doc tests.
+
+### Generate the documentation as HTML page
+
+Rust creates a HTMl page from your docstrings. By passing the `--open` flag the documentation will show up in your 
+webbrowser once rust is finished.
+**We recommend to use this feature and write your docstrings accordingly.**
+```bash
+cargo doc --open
+```
 
 ## Further Reading
  - [Rust by example](https://doc.rust-lang.org/rust-by-example/meta/doc.html)
