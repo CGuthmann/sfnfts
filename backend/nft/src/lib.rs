@@ -11,7 +11,7 @@ pub mod shielded_fractional_nft;
 pub trait NFT: Sized {
     //Instatiates a new NFT.
     fn new(source: &BigInt, value: &BigInt, owner: &BigInt,
-         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>) 
+         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>,private_key: &BigInt) 
          -> Result<Self,Box<dyn Error>> ;
 
     fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt) -> Result<Self, Box<dyn Error>>;

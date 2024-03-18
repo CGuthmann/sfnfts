@@ -1,6 +1,7 @@
 pragma circom 2.0.6;
 
 include "../circomlib/circuits/comparators.circom";
+include "../circomlib/circuits/poseidon.circom";
 include "./nft.circom";
 
 template ShieldedFractionalNFTTransfer(depth){
@@ -49,6 +50,14 @@ template ShieldedFractionalNFTTransfer(depth){
     signal output a_hash; //3
     signal output b_hash; //4
 
+
+    /*
+    * Verifying ownership
+    */
+
+    component private_key_hasher = Poseidon(1);
+    private_key_hasher.inputs[0] <== private_key;
+    private_key_hasher.out === base_public_key_owner;
 
     /*
     * Constraining the Parameter

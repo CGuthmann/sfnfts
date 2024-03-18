@@ -32,6 +32,7 @@ impl NFT for ShieldedFractionalNFT {
         owner: &BigInt,
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
         trust_list_proof: &MerkleProof<PoseidonHasher, 2>,
+        private_key: &BigInt
     ) -> Result<Self, Box<dyn Error>> {
         let mut nft = ShieldedFractionalNFT {
             source_hash: source.clone(),
@@ -52,6 +53,9 @@ impl NFT for ShieldedFractionalNFT {
         nft.append_flat_json(&mut json, &"".to_owned())?;
         json.push(',');
 
+        
+        json.push_str(&format!("\"private_key\":\"{:?}\",", private_key));
+
         json.push_str(&format!("\"pathTrust\":"));
         append_json_vector(&mut json, &trust_list_proof.path);
 
@@ -60,8 +64,9 @@ impl NFT for ShieldedFractionalNFT {
 
         json.push('}');
 
+        dbg!(&json);
         let proof = proof_nft_mint(&json, None, None)?;
-
+        dbg!(proof.verify());
         let index = ledger_authority.mint(&proof)?;
 
         nft.tree_index = index; //updates the merkle tree index stored in the nft
@@ -175,6 +180,8 @@ impl FractionalNFT for ShieldedFractionalNFT {
         json.push_str(&format!("\"b_divider\":\"{:?}\"", 1));
 
         json.push('}');
+
+        dbg!(&json);
 
         let proof = proof_nft_transfer(&json, None, None)?;
 
@@ -595,12 +602,11 @@ mod test {
     use ledger_authority::remote_ledger_authority::RemoteLedgerAuthority;
 
     #[test]
-    fn test_nft() {
+    fn test_nft_local() {
         let source = BigInt::from_str("333").unwrap();
         let value = BigInt::from_str("120").unwrap();
-        let owner = BigInt::from_str_radix(
-            "0001020304050607080900010203040506070809000102030405060708090001",
-            16,
+        let owner = BigInt::from_str(
+            "18586133768512220936620570745912940619677854269274689475585506675881198879027"
         )
         .unwrap();
         let owner_b = BigInt::from_str_radix(
@@ -624,13 +630,14 @@ mod test {
 
         dbg!(&proof.path);
 
-        let nft =
-            ShieldedFractionalNFT::new(&source, &value, &owner, &mut ledger_authority, &proof)
-                .unwrap();
-
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+                ;
+        dbg!(&nft_wrap);
+        let nft = nft_wrap.unwrap();
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
-                &owner,
+                &BigInt::from_str("1").unwrap(),
                 [BigInt::from(1), BigInt::from(2)],
                 &owner,
                 &owner_b,
@@ -658,7 +665,7 @@ mod test {
         dbg!(&proof.path);
 
         let nft = match
-            ShieldedFractionalNFT::new(&source, &value, &owner, &mut ledger_authority, &proof)
+            ShieldedFractionalNFT::new(&source, &value, &owner, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
                 {
                     Ok(res) => res,
                     Err(err) => {

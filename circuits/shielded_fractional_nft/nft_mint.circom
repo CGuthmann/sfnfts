@@ -1,6 +1,7 @@
 pragma circom 2.0.6;
 include "./nft.circom";
 include "../heimdall-circuits/heimdall/lib/merkleproof.circom";
+include "../circomlib/circuits/poseidon.circom";
 
 template MintShieldedFractionalNFT(depth){
 
@@ -11,6 +12,7 @@ template MintShieldedFractionalNFT(depth){
     signal input consumed;
     signal input salt;
 
+    signal input private_key;
     signal input pathTrust[depth];
     signal input lemmaTrust[depth+2];
 
@@ -28,6 +30,14 @@ template MintShieldedFractionalNFT(depth){
 
     nft_hash <== shieldedFractionalNFTbase.nft_hash;
 
+    component private_key_hasher = Poseidon(1);
+    private_key_hasher.inputs[0] <== private_key;
+
+    
+    component public_key_hasher = Poseidon(1);
+    public_key_hasher.inputs[0] <== private_key_hasher.out;
+
+    public_key_hasher.out === lemmaTrust[0];
 
     component merkleProof = MerkleProof(depth);
     merkleProof.lemma[0] <== lemmaTrust[0];
