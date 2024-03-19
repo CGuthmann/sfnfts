@@ -10,7 +10,7 @@ services:
     ports:
       - "8000:8000"
 
-    command: cargo run #/bin/sh -c "foreman start -f myprocfile || sleep 2073600"
+    command: cargo run
     volumes:
       -  ./la_api/ledger_authority.sqlite:/la_api/ledger_authority.sqlite
     environment:
