@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  la_api:
+    restart: "no"
+    build:
+      context: .
+      dockerfile: ./la_api/la_api.dockerfile
+
+    ports:
+      - "8000:8000"
+
+    command: cargo run #/bin/sh -c "foreman start -f myprocfile || sleep 2073600"
+    volumes:
+      -  ./la_api/ledger_authority.sqlite:/la_api/ledger_authority.sqlite
+    environment:
+        - HEIMDALL_RS_LIBS=/usr/lib/gcc/x86_64-linux-gnu/12/
