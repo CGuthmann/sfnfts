@@ -1,6 +1,7 @@
 pragma circom 2.0.6;
 include "./nft.circom";
 include "../heimdall-circuits/heimdall/lib/merkleproof.circom";
+include "../circomlib/circuits/poseidon.circom";
 
 template BurnShieldedFractionalNFT(depth){
 
@@ -11,6 +12,8 @@ template BurnShieldedFractionalNFT(depth){
     signal input consumed;
     signal input salt;
 
+    signal input private_key;
+
     signal input pathNFT[depth];
     signal input lemmaNFT[depth+2];
 
@@ -18,7 +21,13 @@ template BurnShieldedFractionalNFT(depth){
     signal output root; //1
     signal output nft_path[depth]; //2+depth
 
+    /*
+    * Verifying ownership
+    */
 
+    component private_key_hasher = Poseidon(1);
+    private_key_hasher.inputs[0] <== private_key;
+    private_key_hasher.out === public_key_owner;
     
     component shieldedFractionalNFT = ShieldedFractionalNFT(depth);
 
