@@ -77,7 +77,7 @@ pub async fn post_transfer(
 
 pub async fn post_burn(
     proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
-) -> Result<(), &'static str> {
+) -> Result<(usize,usize), &'static str> {
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
             match la.burn(&proof_json.into_inner()) {

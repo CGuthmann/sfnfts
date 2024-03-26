@@ -14,12 +14,16 @@ template BurnShieldedFractionalNFT(depth){
 
     signal input private_key;
 
+    signal input tree_index;
+    signal input id;
     signal input pathNFT[depth];
     signal input lemmaNFT[depth+2];
 
-    signal output nft_hash_burned; //0
-    signal output root; //1
-    signal output nft_path[depth]; //2+depth
+
+    signal output base_hash; //0
+    signal output base_tree_index_out; //1
+    signal output base_tree_root; //2
+    signal output burned_hash; //3
 
     /*
     * Verifying ownership
@@ -38,6 +42,8 @@ template BurnShieldedFractionalNFT(depth){
     shieldedFractionalNFT.fraction[1] <== fraction[1];
     shieldedFractionalNFT.consumed <== 0;
     shieldedFractionalNFT.salt   <== salt;  
+    shieldedFractionalNFT.id   <== id;  
+
 
     shieldedFractionalNFT.lemma[0] <== lemmaNFT[0];
     for (var i = 0; i < depth; i++) {
@@ -46,19 +52,24 @@ template BurnShieldedFractionalNFT(depth){
     }	
     shieldedFractionalNFT.lemma[depth + 1] <== lemmaNFT[depth+1];
 
-    root <== lemmaNFT[depth+1];
+    base_hash <== shieldedFractionalNFT.nft_hash;
+
+    base_tree_index_out <== tree_index;
+
+    base_tree_root <== lemmaNFT[depth+1];
+
     
-    component shieldedFractionalNFTbase = ShieldedFractionalNFTbase();
+    component shieldedFractionalNFTburned = ShieldedFractionalNFTbase();
 
-    shieldedFractionalNFTbase.source_hash <== source_hash;
-    shieldedFractionalNFTbase.public_key_owner <== public_key_owner;
-    shieldedFractionalNFTbase.total_quantity <== total_quantity;
-    shieldedFractionalNFTbase.fraction[0] <== fraction[0];
-    shieldedFractionalNFTbase.fraction[1] <== fraction[1];
-    shieldedFractionalNFTbase.consumed <== 1;
-    shieldedFractionalNFTbase.salt   <== salt;  
+    shieldedFractionalNFTburned.source_hash <== source_hash;
+    shieldedFractionalNFTburned.public_key_owner <== public_key_owner;
+    shieldedFractionalNFTburned.total_quantity <== total_quantity;
+    shieldedFractionalNFTburned.fraction[0] <== fraction[0];
+    shieldedFractionalNFTburned.fraction[1] <== fraction[1];
+    shieldedFractionalNFTburned.consumed <== 1;
+    shieldedFractionalNFTburned.salt   <== salt;  
 
-    nft_hash_burned <==  shieldedFractionalNFTbase.nft_hash;
+    burned_hash <==  shieldedFractionalNFTburned.nft_hash;
 }
 
 component main = BurnShieldedFractionalNFT(3);

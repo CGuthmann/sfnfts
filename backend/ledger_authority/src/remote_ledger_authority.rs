@@ -61,11 +61,14 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
     }
 
     fn burn(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
-    -> Result<(),Box<dyn std::error::Error>> {
+    -> Result<(usize,usize),Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
         let resp = client.post(self.url.to_owned() + "/burn").json(proof).send()?;
+        
         Ok(resp.json()?)
     }
+
+
 }
 
 

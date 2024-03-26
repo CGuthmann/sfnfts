@@ -15,7 +15,7 @@ pub trait LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize> {
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>;
 
     fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
-    -> Result<(),Box<dyn Error>>;
+    -> Result<(usize,usize),Box<dyn Error>>;
 
     fn get_tree(&self) -> Vec<HashTree<H,BRANCHING_FACTOR>>;  
     fn get_trust_list(&self)-> HashTree<H,2>;
@@ -40,7 +40,8 @@ pub struct DefaultLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize
         deserialize = "HashTree<H,2>: Deserialize<'de>"
     ))]
     pub trust_list: HashTree<H,2>,
-    pub nullifier: Vec<BigInt>
+    pub nullifier: Vec<BigInt>,
+    leave_count: usize
 }
 
 impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRANCHING_FACTOR>  {
@@ -48,9 +49,11 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRA
     pub fn new(tree_depth: u32, mut trust_list: Vec<String>)
     -> Self{
         
-        let leaves = vec!["0".to_owned(); BRANCHING_FACTOR.pow(tree_depth )];
 
         fill_vec(&mut trust_list, 2);
+
+        let leave_count = BRANCHING_FACTOR.pow(tree_depth);
+        let leaves = vec!["0".to_owned(); leave_count];
 
         return DefaultLedgerAuthority{
             tree: vec![HashTree::<H,BRANCHING_FACTOR>::new(&leaves)],
@@ -58,8 +61,22 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRA
             next_index: 0,
             tree_depth,
             trust_list: HashTree::<H,2>::new(&trust_list),
-            nullifier: Vec::new()
+            nullifier: Vec::new(),
+            leave_count
         };
+    }
+
+    fn increase_index(&mut self){
+
+        self.next_index += 1;
+
+        if self.next_index >= self.leave_count {
+            self.tree.push(HashTree::<H,BRANCHING_FACTOR>::new(&vec!["0".to_owned(); self.leave_count]));
+
+            self.current_tree_index +=1;
+            self.next_index = 0;
+        }
+
     }
 }
 
@@ -76,9 +93,11 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
             Err("Invalid proof!")?
         }
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[0].to_string());
+        let index = (self.current_tree_index,self.next_index);
 
-        self.next_index += 1;
-        Ok((self.current_tree_index,self.next_index -1))
+        self.increase_index();
+
+        Ok(index)
     }
 
     ///Burns a nft
@@ -87,18 +106,28 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     /// 
     /// * 'proof' - A ZKP proofing the validity of the NFT burn (nft_burn)
     fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
-    -> Result<(), Box<dyn Error>>{
+    -> Result<(usize,usize), Box<dyn Error>>{
 
-        if self.nullifier.contains(&proof.outputs[1]){
+        if self.nullifier.contains(&proof.outputs[0]){
             Err("Nullified nft!")?
         }
 
         if proof.verify()? == false {
             Err("Invalid proof!")?
         }
-        self.tree[proof.outputs[0].to_string().parse::<usize>()?].update(self.next_index,proof.outputs[1].to_string());
 
-        Ok(())
+        if !self.tree[proof.outputs[1].to_string().parse::<usize>()?].get_root().eq(&proof.outputs[2]) {
+            Err("Invalid merkle root!")?
+        }
+
+        self.tree[self.current_tree_index].update(self.next_index,proof.outputs[3].to_string());
+        let index = (self.current_tree_index,self.next_index);
+
+        
+        self.nullifier.push(proof.outputs[0].clone());
+
+        self.increase_index();
+        Ok(index)
     }
 
     ///Transfers and splits an nft to two parties and returns the merkle tree indices
@@ -122,14 +151,16 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
         }
 
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[3].to_string());
-        self.next_index += 1;
+        let index_a = (self.current_tree_index,self.next_index);
+        self.increase_index();
 
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[4].to_string());
-        self.next_index += 1;
+        let index_b = (self.current_tree_index,self.next_index);
+        self.increase_index();
 
         self.nullifier.push(proof.outputs[0].clone());
 
-        Ok(((self.current_tree_index,self.next_index -2),(self.current_tree_index,self.next_index -1)))       
+        Ok((index_a,index_b))       
         
     }
 
@@ -179,6 +210,5 @@ mod test{
             DefaultLedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
 
         let json = serde_json::to_string(&ledger_authority);
-        dbg!(json);
     }
 }

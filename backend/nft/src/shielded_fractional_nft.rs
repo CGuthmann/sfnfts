@@ -1,4 +1,4 @@
-use std::{error::Error, ops::Mul, str::FromStr};
+use std::{error::Error, io::Write, ops::Mul, str::FromStr};
 
 use crate::{FractionalNFT, ShieldedNFT, NFT};
 
@@ -47,6 +47,8 @@ impl NFT for ShieldedFractionalNFT {
             tree_index: (0, 0),
         };
 
+        print!("Generating mint zkp...\t\t");
+        std::io::stdout().flush().unwrap();
         //prepares the input arguments for the ZKP
         let mut json = String::new();
         json.push('{');
@@ -64,11 +66,14 @@ impl NFT for ShieldedFractionalNFT {
 
         json.push('}');
 
-        dbg!(&json);
-        let proof = proof_nft_mint(&json, None, None)?;
-        dbg!(proof.verify());
-        let index = ledger_authority.mint(&proof)?;
 
+        let proof = proof_nft_mint(&json, None, None)?;
+        println!("done!");
+
+        print!("Sending mint zkp to the ledger authority...\t\t");
+        std::io::stdout().flush().unwrap();
+        let index = ledger_authority.mint(&proof)?;
+        println!("done!");
         nft.tree_index = index; //updates the merkle tree index stored in the nft
 
         Ok(nft)
@@ -83,6 +88,9 @@ impl NFT for ShieldedFractionalNFT {
         private_key: &BigInt,
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        
+        print!("Generating burn zkp...\t\t");
+        std::io::stdout().flush().unwrap();
         let merkle_proof =
             ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
 
@@ -91,7 +99,11 @@ impl NFT for ShieldedFractionalNFT {
         json.push('{');
         self.append_flat_json(&mut json, &"".to_owned())?;
 
-        json.push_str(&format!("\",private_key\":\"{:?}\"", private_key));
+        json.push_str(&format!(",\"private_key\":\"{:?}\",", private_key));
+
+        json.push_str(&format!("\"tree_index\":\"{:?}\",", self.tree_index.0));
+        json.push_str(&format!("\"id\":\"{:?}\"", self.tree_index.1));
+
         json.push_str(&format!(",\"pathNFT\":"));
         append_json_vector(&mut json, &merkle_proof.path);
 
@@ -100,12 +112,19 @@ impl NFT for ShieldedFractionalNFT {
 
         json.push('}');
         let proof = proof_nft_burn(&json, None, None)?;
+        println!("done!");
 
-        let result = ledger_authority.burn(&proof);
+        print!("Sending burn zkp to the ledger authority...\t\t");
+        std::io::stdout().flush().unwrap();
+        let result = ledger_authority.burn(&proof)?;
+        
+        println!("done!");
 
         self.consumed = true;
-
-        result
+        self.tree_index = result;
+        
+        
+        Ok(())
     }
 
     fn get_value(&self) -> BigInt {
@@ -122,9 +141,14 @@ impl FractionalNFT for ShieldedFractionalNFT {
         target_b: &BigInt,
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
     ) -> Result<(Self, Self), Box<dyn std::error::Error>> {
+
+        print!("Shortening the fraction...\t\t");        
+        std::io::stdout().flush().unwrap();
+        
         let total_nom = fraction[1].clone().mul(self.fraction[0].clone());
         let nom = fraction[0].clone().mul(self.fraction[0].clone());
         let denom = self.fraction[1].clone().mul(fraction[1].clone());
+        println!("done!");
 
         //Instantiates the new objects
 
@@ -147,6 +171,8 @@ impl FractionalNFT for ShieldedFractionalNFT {
             tree_index: (0, 0),
         };
 
+        print!("Generating transfer zkp...\t\t");
+        std::io::stdout().flush().unwrap();
         let merkle_proof =
             ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
 
@@ -183,11 +209,15 @@ impl FractionalNFT for ShieldedFractionalNFT {
 
         json.push('}');
 
-        dbg!(&json);
+
 
         let proof = proof_nft_transfer(&json, None, None)?;
+        println!("done!");
 
+        print!("Sending transfer zkp to the ledger authority...\t\t");
+        std::io::stdout().flush().unwrap();
         let (index_a, index_b) = ledger_authority.transfer(&proof)?;
+        println!("done!");
 
         nft_a.tree_index = index_a;
         nft_b.tree_index = index_b;
@@ -596,7 +626,7 @@ mod witness_generation {
 mod test {
     use super::*;
 
-    use std::str::FromStr;
+    use std::{io::{stdin, stdout, Read, Write}, str::FromStr};
 
     use crate::{shielded_fractional_nft::ShieldedFractionalNFT, *};
     use num_bigint::BigInt;
@@ -630,12 +660,12 @@ mod test {
 
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
-        dbg!(&proof.path);
+
 
         let nft_wrap =
             ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
                 ;
-        dbg!(&nft_wrap);
+
         let nft = nft_wrap.unwrap();
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
@@ -647,9 +677,12 @@ mod test {
             )
             .unwrap();
 
-        dbg!(nft_a.burn(&owner_a_priv,&mut ledger_authority));
-        dbg!(nft_a);
-        dbg!(nft_b);
+            match nft_b.burn(&owner_b_priv,&mut ledger_authority){
+                Ok(_) => (),
+                Err(err) => panic!("{}", err.to_string()),
+            }
+
+
 
     }
 
@@ -670,14 +703,14 @@ mod test {
 
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
-        dbg!(&proof.path);
+
 
         let nft = match
             ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
                 {
                     Ok(res) => res,
                     Err(err) => {
-                        dbg!(err.to_string());
+
                         panic!("Error")
                     },
                 };
@@ -692,10 +725,114 @@ mod test {
             )
             .unwrap();
 
-        nft_a.burn(&owner_a_priv,&mut ledger_authority);
+        match nft_b.burn(&owner_b_priv,&mut ledger_authority){
+            Ok(_) => (),
+            Err(err) => panic!("{}", err.to_string()),
+        }
         
-        dbg!(nft_a);
-        dbg!(nft_b);
 
+
+
+    }
+
+    #[test]
+    fn example_nft_backend(){
+
+        println!("Step 0: Initializing public/private key pairs for participants");
+        let source = BigInt::from_str("333").unwrap();
+        let value = BigInt::from_str("120").unwrap();
+
+        let trusted_priv = BigInt::from_str("1").unwrap();
+        let _trusted_pub = BigInt::from_str("18586133768512220936620570745912940619677854269274689475585506675881198879027").unwrap();
+        println!("Bundesumweltamt:");
+        println!("\tprivate key:\t {}", trusted_priv);
+        println!("\tpublic key:\t {}", _trusted_pub);
+        println!("");
+
+        let owner_a_priv = BigInt::from_str("2").unwrap();
+        let owner_a_pub = BigInt::from_str("8645981980787649023086883978738420856660271013038108762834452721572614684349").unwrap(); //poseidon of 2
+        println!("PV owner Alice:");
+        println!("\tprivate key:\t {}", owner_a_priv);
+        println!("\tpublic key:\t {}", owner_a_pub);
+        println!("");
+
+        let owner_b_priv = BigInt::from_str("3").unwrap();
+        let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
+        println!("Chocolate manufacturer Bob:");
+        println!("\tprivate key:\t {}", owner_b_priv);
+        println!("\tpublic key:\t {}", owner_b_pub);
+        println!("");
+        pause();
+
+        println!("Step 1a: Initializing remote ledeger authority\n");
+        let mut ledger_authority = RemoteLedgerAuthority::new("http://192.168.178.87:8000".to_string());
+        pause();
+
+        println!("Step 1b: Initializing connection to the remote ledger authority:");
+        println!("done!\n");
+        pause();
+
+
+        println!("Step 2: Bundesumweltamt mints a new NFT for Alice, proofing the generation of 120 kWh green energy:\n");
+
+        print!("Generating membership proof of the Bundesumweltamt in the trust list...\t\t");
+        std::io::stdout().flush().unwrap();
+        let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
+        println!("done!");
+        println!("Merkle proof: {}\n", serde_json::to_string(&proof).unwrap());
+        
+        let nft = match
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
+                {
+                    Ok(res) => res,
+                    Err(err) => {
+
+                        panic!("Error")
+                    },
+                };
+
+        println!("Ledger authority accepted the minting zkp, NFT is now valid.");
+        println!("Alice's NFT:");
+        println!("{:?}\n\n", nft);
+        pause();
+
+        
+        println!("Step 3: Alice sells 60 kWh of green energy to Bob");
+
+        let (mut nft_a,mut nft_b) = nft
+            .transfer_split(
+                &owner_a_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                &mut ledger_authority,
+            )
+            .unwrap();
+        println!("Ledger authority accepted the transfer zkp, the two resulting NFTs are now valid.");
+        println!("Alice's new NFT:");
+        println!("{:?}\n\n", nft_a);
+
+        println!("Bob's NFT:");
+        println!("{:?}\n\n", nft_b);
+        pause();         
+
+        println!("Step 4: Bob uses the energy to manifacture green chocolate:");
+        match nft_b.burn(&owner_b_priv,&mut ledger_authority){
+            Ok(_) => (),
+            Err(err) => panic!("{}", err.to_string()),
+        }
+        println!("Bob's burned NFT:");
+        println!("{:?}\n\n", nft_b);
+
+        
+
+
+    }
+
+    fn pause(){
+        let mut stdout = stdout();
+        stdout.write(b"Press Enter to continue...\n").unwrap();
+        stdout.flush().unwrap();
+        stdin().read(&mut [0]).unwrap();
     }
 }

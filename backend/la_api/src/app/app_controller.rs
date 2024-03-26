@@ -111,10 +111,11 @@ pub async fn post_transfer(
 #[post("/burn", format = "json", data = "<proof>")]
 pub async fn post_burn(
     proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
-) -> Result<Status, Status> {
+) -> Result<Json<(usize,usize)>, Status> {
     let status= app_service::post_burn(proof).await;
+    dbg!(&status);
     match status {
-        Ok(res) => Ok(Status::Accepted),
+        Ok(res) => Ok(Json(res)),
         Err(_) => Err(Status::InternalServerError),
     }
 }
