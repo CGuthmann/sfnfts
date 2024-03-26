@@ -113,7 +113,6 @@ pub async fn post_burn(
     proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
 ) -> Result<Json<(usize,usize)>, Status> {
     let status= app_service::post_burn(proof).await;
-    dbg!(&status);
     match status {
         Ok(res) => Ok(Json(res)),
         Err(_) => Err(Status::InternalServerError),

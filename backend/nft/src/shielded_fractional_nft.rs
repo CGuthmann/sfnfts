@@ -47,7 +47,7 @@ impl NFT for ShieldedFractionalNFT {
             tree_index: (0, 0),
         };
 
-        print!("Generating mint zkp...\t\t");
+
         std::io::stdout().flush().unwrap();
         //prepares the input arguments for the ZKP
         let mut json = String::new();
@@ -68,12 +68,12 @@ impl NFT for ShieldedFractionalNFT {
 
 
         let proof = proof_nft_mint(&json, None, None)?;
-        println!("done!");
 
-        print!("Sending mint zkp to the ledger authority...\t\t");
+
+
         std::io::stdout().flush().unwrap();
         let index = ledger_authority.mint(&proof)?;
-        println!("done!");
+
         nft.tree_index = index; //updates the merkle tree index stored in the nft
 
         Ok(nft)
@@ -89,7 +89,7 @@ impl NFT for ShieldedFractionalNFT {
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         
-        print!("Generating burn zkp...\t\t");
+
         std::io::stdout().flush().unwrap();
         let merkle_proof =
             ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
@@ -112,13 +112,13 @@ impl NFT for ShieldedFractionalNFT {
 
         json.push('}');
         let proof = proof_nft_burn(&json, None, None)?;
-        println!("done!");
 
-        print!("Sending burn zkp to the ledger authority...\t\t");
+
+
         std::io::stdout().flush().unwrap();
         let result = ledger_authority.burn(&proof)?;
         
-        println!("done!");
+
 
         self.consumed = true;
         self.tree_index = result;
@@ -142,13 +142,13 @@ impl FractionalNFT for ShieldedFractionalNFT {
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
     ) -> Result<(Self, Self), Box<dyn std::error::Error>> {
 
-        print!("Shortening the fraction...\t\t");        
+
         std::io::stdout().flush().unwrap();
         
         let total_nom = fraction[1].clone().mul(self.fraction[0].clone());
         let nom = fraction[0].clone().mul(self.fraction[0].clone());
         let denom = self.fraction[1].clone().mul(fraction[1].clone());
-        println!("done!");
+
 
         //Instantiates the new objects
 
@@ -171,7 +171,7 @@ impl FractionalNFT for ShieldedFractionalNFT {
             tree_index: (0, 0),
         };
 
-        print!("Generating transfer zkp...\t\t");
+
         std::io::stdout().flush().unwrap();
         let merkle_proof =
             ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
@@ -212,12 +212,12 @@ impl FractionalNFT for ShieldedFractionalNFT {
 
 
         let proof = proof_nft_transfer(&json, None, None)?;
-        println!("done!");
 
-        print!("Sending transfer zkp to the ledger authority...\t\t");
+
+
         std::io::stdout().flush().unwrap();
         let (index_a, index_b) = ledger_authority.transfer(&proof)?;
-        println!("done!");
+
 
         nft_a.tree_index = index_a;
         nft_b.tree_index = index_b;
