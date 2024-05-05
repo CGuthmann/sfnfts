@@ -14,12 +14,15 @@ pub trait NFT: Sized {
          ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>,private_key: &BigInt) 
          -> Result<Self,Box<dyn Error>> ;
 
+    //Transfer the NFT.
     fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt) -> Result<Self, Box<dyn Error>>;
 
+    //Burn the NFT.
     fn burn(&mut self,
         private_key: &BigInt,
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>) -> Result<(), Box<dyn std::error::Error>>;
 
+    //Get value stored in the NFT.
     fn get_value(&self) -> BigInt;
 }
 
