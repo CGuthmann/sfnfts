@@ -14,10 +14,7 @@ use num_bigint::BigInt;
 //benchmarks the nft minting
 
 fn nft_mint(c: &mut Criterion){
-    
-    c.bench_function("benchmarks the nft minting", 
-        |b| b.iter(||{
-            let source = BigInt::from_str("333").unwrap();
+    let source = BigInt::from_str("333").unwrap();
         let value = BigInt::from_str("120").unwrap();
         
         let trusted_priv = BigInt::from_str("1").unwrap();
@@ -39,6 +36,10 @@ fn nft_mint(c: &mut Criterion){
                 "5".to_owned(),
             ],
         );
+        
+    c.bench_function("benchmarks the nft minting", 
+        |b| b.iter(||{
+            
 
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
@@ -49,21 +50,6 @@ fn nft_mint(c: &mut Criterion){
                 ;
 
         let nft = nft_wrap.unwrap();
-        let (mut nft_a,mut nft_b) = nft
-            .transfer_split(
-                &owner_a_priv,
-                [BigInt::from(1), BigInt::from(2)],
-                &owner_a_pub,
-                &owner_b_pub,
-                &mut ledger_authority,
-            )
-            .unwrap();
-
-            match nft_b.burn(&owner_b_priv,&mut ledger_authority){
-                Ok(_) => (),
-                Err(err) => panic!("{}", err.to_string()),
-            }
-
             
         })
     );
