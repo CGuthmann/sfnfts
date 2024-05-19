@@ -30,7 +30,7 @@ pub struct DefaultLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize
         deserialize = "HashTree<H,2>: Deserialize<'de>"
     ))]
     pub tree: Vec<HashTree<H,BRANCHING_FACTOR>>,
-
+    pub tree_roots: Vec<Vec<BigInt>>,
     pub current_tree_index: usize,
     pub next_index: usize,
     pub tree_depth: u32,
@@ -54,10 +54,12 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRA
 
         let leave_count = BRANCHING_FACTOR.pow(tree_depth);
         let leaves = vec!["0".to_owned(); leave_count];
-
+        let initial_tree = HashTree::<H,BRANCHING_FACTOR>::new(&leaves);
+        let initial_root = initial_tree.get_root().clone();
         return DefaultLedgerAuthority{
-            tree: vec![HashTree::<H,BRANCHING_FACTOR>::new(&leaves)],
+            tree: vec![initial_tree],
             current_tree_index: 0,
+            tree_roots: vec![vec![initial_root]],
             next_index: 0,
             tree_depth,
             trust_list: HashTree::<H,2>::new(&trust_list),
@@ -75,6 +77,8 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRA
 
             self.current_tree_index +=1;
             self.next_index = 0;
+            
+            self.tree_roots.push(vec![self.tree[self.current_tree_index].get_root().clone()]);
         }
 
     }
@@ -93,8 +97,8 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
             Err("Invalid proof!")?
         }
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[0].to_string());
+        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
         let index = (self.current_tree_index,self.next_index);
-
         self.increase_index();
 
         Ok(index)
@@ -116,11 +120,14 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
             Err("Invalid proof!")?
         }
 
-        if !self.tree[proof.outputs[1].to_string().parse::<usize>()?].get_root().eq(&proof.outputs[2]) {
+        let proof_root = &proof.outputs[2];
+
+        if !self.tree_roots[proof.outputs[1].to_string().parse::<usize>()?].contains(proof_root) {
             Err("Invalid merkle root!")?
         }
 
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[3].to_string());
+        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
         let index = (self.current_tree_index,self.next_index);
 
         
@@ -146,15 +153,19 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
             Err("Invalid proof!")?
         }
 
-        if !self.tree[proof.outputs[1].to_string().parse::<usize>()?].get_root().eq(&proof.outputs[2]) {
+        let proof_root = &proof.outputs[2];
+
+        if !self.tree_roots[proof.outputs[1].to_string().parse::<usize>()?].contains(proof_root) {
             Err("Invalid merkle root!")?
         }
 
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[3].to_string());
+        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
         let index_a = (self.current_tree_index,self.next_index);
         self.increase_index();
 
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[4].to_string());
+        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
         let index_b = (self.current_tree_index,self.next_index);
         self.increase_index();
 
