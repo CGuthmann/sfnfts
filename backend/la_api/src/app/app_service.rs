@@ -4,6 +4,7 @@ use std::{env::current_dir, fs::remove_file};
 
 use crypto::{merkle_tree::HashTree, poseidon::PoseidonHasher};
 use db_service::{sqlite_service::SQLiteService, PersistentService, Table};
+use ::ledger_authority::LedgerAuthority;
 use num_bigint::BigInt;
 use rocket::serde::json::Json;
 
@@ -75,6 +76,25 @@ pub async fn post_transfer(
     }
 }
 
+pub async fn post_transfer_bench(
+    proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
+) -> Result<((usize,usize),(usize,usize)), &'static str> {
+    match ledger_authority::get_ledger_authority() {
+        Ok(la) => {
+            match la.transfer_bench(&proof_json.into_inner()) {
+                Ok(res) => {
+                    match save_ledger_authority() {
+                        Ok(_) =>  Ok(res),
+                        Err(_) => Err("Transfer failed."),
+                    }
+                },
+                Err(_) => Err("Transfer failed."),
+            }
+        },
+        Err(_) => Err("Ledger authority currently unavailable."),
+    }
+}
+
 pub async fn post_burn(
     proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
 ) -> Result<(usize,usize), &'static str> {
@@ -113,7 +133,7 @@ mod ledger_authority {
     static mut LA: Option<DefaultLedgerAuthority<PoseidonHasher, 2>> = None;
 
     pub fn get_ledger_authority(
-    ) -> Result<&'static mut dyn LedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
+    ) -> Result<&'static mut DefaultLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
         unsafe {
             match &mut LA {
                 Some(la) => Ok(la),
@@ -150,7 +170,7 @@ mod ledger_authority {
         if la_json_res.is_empty() {
             let trust_list = lines_from_file("trust_list");
 
-            let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
+            let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(10, trust_list);
 
             db.save("ledger_authority", vec!["ID".to_string(), "json".to_string()], vec!["0".to_string(), serde_json::to_string(&la)?])?;
 
@@ -170,7 +190,7 @@ mod ledger_authority {
 
         let trust_list = lines_from_file("trust_list");
 
-        let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(3, trust_list);
+        let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(10, trust_list);
 
         Ok(la)
     }

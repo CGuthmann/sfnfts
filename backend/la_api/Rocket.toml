@@ -14,3 +14,4 @@ read_timeout = 5
 write_timeout = 5
 log = "critical"
 limits = { forms = 32768 }
+secret_key = "8e2836002802f13a079aefd921b052b85e5360ad60bb0289004eb62b007a3fde"

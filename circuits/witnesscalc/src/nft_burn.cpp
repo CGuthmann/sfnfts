@@ -452,15 +452,15 @@ ShieldedFractionalNFT_145_run,
 BurnShieldedFractionalNFT_146_run };
 uint get_main_input_signal_start() {return 5;}
 
-uint get_main_input_signal_no() {return 18;}
+uint get_main_input_signal_no() {return 32;}
 
-uint get_total_signal_no() {return 22451;}
+uint get_total_signal_no() {return 27946;}
 
-uint get_number_of_components() {return 5001;}
+uint get_number_of_components() {return 6107;}
 
 uint get_size_of_input_hashmap() {return 256;}
 
-uint get_size_of_witness() {return 7076;}
+uint get_size_of_witness() {return 8798;}
 
 uint get_size_of_constants() {return 25025;}
 
@@ -325704,10 +325704,10 @@ void MerkleProof_144_create(uint soffset,uint coffset,Circom_CalcWit* ctx,std::s
 ctx->componentMemory[coffset].templateId = 144;
 ctx->componentMemory[coffset].templateName = "MerkleProof";
 ctx->componentMemory[coffset].signalStart = soffset;
-ctx->componentMemory[coffset].inputCounter = 8;
+ctx->componentMemory[coffset].inputCounter = 22;
 ctx->componentMemory[coffset].componentName = componentName;
 ctx->componentMemory[coffset].idFather = componentFather;
-ctx->componentMemory[coffset].subcomponents = new uint[6];
+ctx->componentMemory[coffset].subcomponents = new uint[20];
 }
 
 void MerkleProof_144_run(uint ctx_index,Circom_CalcWit* ctx){
@@ -325727,14 +325727,14 @@ uint sub_component_aux;
 PFrElement aux_dest = &lvar[0];
 // load src
 // end load src
-Fr_copy(aux_dest,&circuitConstants[195]);
+Fr_copy(aux_dest,&circuitConstants[205]);
 }
 {
 uint aux_create = 0;
-int aux_cmp_num = 471+ctx_index+1;
-uint csoffset = mySignalStart+2318;
-uint aux_dimensions[1] = {3};
-for (uint i = 0; i < 3; i++) {
+int aux_cmp_num = 1570+ctx_index+1;
+uint csoffset = mySignalStart+7722;
+uint aux_dimensions[1] = {10};
+for (uint i = 0; i < 10; i++) {
 std::string new_cmp_name = "selectors"+ctx->generate_position_array(aux_dimensions, 1, i);
 mySubcomponents[aux_create+i] = aux_cmp_num;
 Selector_142_create(csoffset,aux_cmp_num,ctx,new_cmp_name,myId);
@@ -325743,11 +325743,11 @@ aux_cmp_num += 1;
 }
 }
 {
-uint aux_create = 3;
+uint aux_create = 10;
 int aux_cmp_num = 0+ctx_index+1;
-uint csoffset = mySignalStart+8;
-uint aux_dimensions[1] = {3};
-for (uint i = 0; i < 3; i++) {
+uint csoffset = mySignalStart+22;
+uint aux_dimensions[1] = {10};
+for (uint i = 0; i < 10; i++) {
 std::string new_cmp_name = "hashers"+ctx->generate_position_array(aux_dimensions, 1, i);
 mySubcomponents[aux_create+i] = aux_cmp_num;
 HashLeftRight_143_create(csoffset,aux_cmp_num,ctx,new_cmp_name,myId);
@@ -325789,7 +325789,7 @@ uint cmp_index_ref = 0;
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 4];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + 5]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + 12]);
 }
 // run sub component if needed
 if(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter)){
@@ -325798,7 +325798,7 @@ Selector_142_run(mySubcomponents[cmp_index_ref],ctx);
 }
 }
 {
-uint cmp_index_ref = 3;
+uint cmp_index_ref = 10;
 {
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 1];
 // load src
@@ -325812,7 +325812,7 @@ HashLeftRight_143_run(mySubcomponents[cmp_index_ref],ctx);
 }
 }
 {
-uint cmp_index_ref = 3;
+uint cmp_index_ref = 10;
 {
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 2];
 // load src
@@ -325831,7 +325831,7 @@ PFrElement aux_dest = &lvar[1];
 // end load src
 Fr_copy(aux_dest,&circuitConstants[74]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 58
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 58
 while(Fr_isTrue(&expaux[0])){
 {
 uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 0);
@@ -325839,7 +325839,7 @@ uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 0);
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 4];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * Fr_toInt(&lvar[1])) + 5)]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * Fr_toInt(&lvar[1])) + 12)]);
 }
 // run sub component if needed
 if(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter)){
@@ -325868,7 +325868,7 @@ PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cm
 // load src
 Fr_sub(&expaux[0],&lvar[1],&circuitConstants[74]); // line circom 64
 // end load src
-Fr_copy(aux_dest,&ctx->signalValues[ctx->componentMemory[mySubcomponents[((1 * Fr_toInt(&expaux[0])) + 3)]].signalStart + 0]);
+Fr_copy(aux_dest,&ctx->signalValues[ctx->componentMemory[mySubcomponents[((1 * Fr_toInt(&expaux[0])) + 10)]].signalStart + 0]);
 }
 // run sub component if needed
 if(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter)){
@@ -325877,7 +325877,7 @@ Selector_142_run(mySubcomponents[cmp_index_ref],ctx);
 }
 }
 {
-uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 3);
+uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 10);
 {
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 1];
 // load src
@@ -325891,7 +325891,7 @@ HashLeftRight_143_run(mySubcomponents[cmp_index_ref],ctx);
 }
 }
 {
-uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 3);
+uint cmp_index_ref = ((1 * Fr_toInt(&lvar[1])) + 10);
 {
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 2];
 // load src
@@ -325911,9 +325911,9 @@ Fr_add(&expaux[0],&lvar[1],&circuitConstants[74]); // line circom 58
 // end load src
 Fr_copy(aux_dest,&expaux[0]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 58
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 58
 }
-Fr_eq(&expaux[0],&signalValues[mySignalStart + 4],&ctx->signalValues[ctx->componentMemory[mySubcomponents[5]].signalStart + 0]); // line circom 70
+Fr_eq(&expaux[0],&signalValues[mySignalStart + 11],&ctx->signalValues[ctx->componentMemory[mySubcomponents[19]].signalStart + 0]); // line circom 70
 if (!Fr_isTrue(&expaux[0])) std::cout << "Failed assert in template/function " << myTemplateName << " line 70. " <<  "Followed trace of components: " << ctx->getTrace(myId) << std::endl;
 assert(Fr_isTrue(&expaux[0]));
 }
@@ -325922,7 +325922,7 @@ void ShieldedFractionalNFT_145_create(uint soffset,uint coffset,Circom_CalcWit* 
 ctx->componentMemory[coffset].templateId = 145;
 ctx->componentMemory[coffset].templateName = "ShieldedFractionalNFT";
 ctx->componentMemory[coffset].signalStart = soffset;
-ctx->componentMemory[coffset].inputCounter = 16;
+ctx->componentMemory[coffset].inputCounter = 30;
 ctx->componentMemory[coffset].componentName = componentName;
 ctx->componentMemory[coffset].idFather = componentFather;
 ctx->componentMemory[coffset].subcomponents = new uint[3];
@@ -325945,12 +325945,12 @@ uint sub_component_aux;
 PFrElement aux_dest = &lvar[0];
 // load src
 // end load src
-Fr_copy(aux_dest,&circuitConstants[195]);
+Fr_copy(aux_dest,&circuitConstants[205]);
 }
 {
 uint aux_create = 0;
-int aux_cmp_num = 621+ctx_index+1;
-uint csoffset = mySignalStart+2942;
+int aux_cmp_num = 1727+ctx_index+1;
+uint csoffset = mySignalStart+8423;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "shieldedFractionalNFTbase";
 mySubcomponents[aux_create+i] = aux_cmp_num;
@@ -325962,19 +325962,19 @@ aux_cmp_num += 2116;
 {
 uint aux_create = 1;
 int aux_cmp_num = 146+ctx_index+1;
-uint csoffset = mySignalStart+597;
+uint csoffset = mySignalStart+611;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "merkleProof";
 mySubcomponents[aux_create+i] = aux_cmp_num;
 MerkleProof_144_create(csoffset,aux_cmp_num,ctx,new_cmp_name,myId);
-csoffset += 2345 ;
-aux_cmp_num += 475;
+csoffset += 7812 ;
+aux_cmp_num += 1581;
 }
 }
 {
 uint aux_create = 2;
 int aux_cmp_num = 0+ctx_index+1;
-uint csoffset = mySignalStart+17;
+uint csoffset = mySignalStart+31;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "hash";
 mySubcomponents[aux_create+i] = aux_cmp_num;
@@ -326093,15 +326093,15 @@ PFrElement aux_dest = &lvar[1];
 // end load src
 Fr_copy(aux_dest,&circuitConstants[72]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 77
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 77
 while(Fr_isTrue(&expaux[0])){
 {
 uint cmp_index_ref = 1;
 {
-PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + ((1 * Fr_toInt(&lvar[1])) + 5)];
+PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + ((1 * Fr_toInt(&lvar[1])) + 12)];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * Fr_toInt(&lvar[1])) + 14)]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * Fr_toInt(&lvar[1])) + 21)]);
 }
 // no need to run sub component
 assert(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter);
@@ -326124,15 +326124,15 @@ Fr_add(&expaux[0],&lvar[1],&circuitConstants[74]); // line circom 77
 // end load src
 Fr_copy(aux_dest,&expaux[0]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 77
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 77
 }
 {
 uint cmp_index_ref = 1;
 {
-PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 4];
+PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 11];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + 13]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + 20]);
 }
 // need to run sub component
 assert(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter));
@@ -326150,7 +326150,7 @@ void BurnShieldedFractionalNFT_146_create(uint soffset,uint coffset,Circom_CalcW
 ctx->componentMemory[coffset].templateId = 146;
 ctx->componentMemory[coffset].templateName = "BurnShieldedFractionalNFT";
 ctx->componentMemory[coffset].signalStart = soffset;
-ctx->componentMemory[coffset].inputCounter = 18;
+ctx->componentMemory[coffset].inputCounter = 32;
 ctx->componentMemory[coffset].componentName = componentName;
 ctx->componentMemory[coffset].idFather = componentFather;
 ctx->componentMemory[coffset].subcomponents = new uint[3];
@@ -326173,12 +326173,12 @@ uint sub_component_aux;
 PFrElement aux_dest = &lvar[0];
 // load src
 // end load src
-Fr_copy(aux_dest,&circuitConstants[195]);
+Fr_copy(aux_dest,&circuitConstants[205]);
 }
 {
 uint aux_create = 0;
 int aux_cmp_num = 0+ctx_index+1;
-uint csoffset = mySignalStart+22;
+uint csoffset = mySignalStart+36;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "private_key_hasher";
 mySubcomponents[aux_create+i] = aux_cmp_num;
@@ -326190,19 +326190,19 @@ aux_cmp_num += 146;
 {
 uint aux_create = 1;
 int aux_cmp_num = 146+ctx_index+1;
-uint csoffset = mySignalStart+602;
+uint csoffset = mySignalStart+616;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "shieldedFractionalNFT";
 mySubcomponents[aux_create+i] = aux_cmp_num;
 ShieldedFractionalNFT_145_create(csoffset,aux_cmp_num,ctx,new_cmp_name,myId);
-csoffset += 12395 ;
-aux_cmp_num += 2738;
+csoffset += 17876 ;
+aux_cmp_num += 3844;
 }
 }
 {
 uint aux_create = 2;
-int aux_cmp_num = 2884+ctx_index+1;
-uint csoffset = mySignalStart+12997;
+int aux_cmp_num = 3990+ctx_index+1;
+uint csoffset = mySignalStart+18492;
 for (uint i = 0; i < 1; i++) {
 std::string new_cmp_name = "shieldedFractionalNFTburned";
 mySubcomponents[aux_create+i] = aux_cmp_num;
@@ -326344,7 +326344,7 @@ uint cmp_index_ref = 1;
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 9];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + 17]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + 24]);
 }
 // run sub component if needed
 if(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter)){
@@ -326358,12 +326358,12 @@ PFrElement aux_dest = &lvar[1];
 // end load src
 Fr_copy(aux_dest,&circuitConstants[72]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 49
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 49
 while(Fr_isTrue(&expaux[0])){
 {
 uint cmp_index_ref = 1;
 {
-PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + ((1 * Fr_toInt(&lvar[1])) + 14)];
+PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + ((1 * Fr_toInt(&lvar[1])) + 21)];
 // load src
 // end load src
 Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * Fr_toInt(&lvar[1])) + 14)]);
@@ -326377,7 +326377,7 @@ uint cmp_index_ref = 1;
 PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + ((1 * (Fr_toInt(&lvar[1]) + 1)) + 9)];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * (Fr_toInt(&lvar[1]) + 1)) + 17)]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + ((1 * (Fr_toInt(&lvar[1]) + 1)) + 24)]);
 }
 // no need to run sub component
 assert(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter);
@@ -326389,15 +326389,15 @@ Fr_add(&expaux[0],&lvar[1],&circuitConstants[74]); // line circom 49
 // end load src
 Fr_copy(aux_dest,&expaux[0]);
 }
-Fr_lt(&expaux[0],&lvar[1],&circuitConstants[195]); // line circom 49
+Fr_lt(&expaux[0],&lvar[1],&circuitConstants[205]); // line circom 49
 }
 {
 uint cmp_index_ref = 1;
 {
-PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 13];
+PFrElement aux_dest = &ctx->signalValues[ctx->componentMemory[mySubcomponents[cmp_index_ref]].signalStart + 20];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + 21]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + 35]);
 }
 // need to run sub component
 assert(!(--ctx->componentMemory[mySubcomponents[cmp_index_ref]].inputCounter));
@@ -326419,7 +326419,7 @@ Fr_copy(aux_dest,&signalValues[mySignalStart + 12]);
 PFrElement aux_dest = &signalValues[mySignalStart + 2];
 // load src
 // end load src
-Fr_copy(aux_dest,&signalValues[mySignalStart + 21]);
+Fr_copy(aux_dest,&signalValues[mySignalStart + 35]);
 }
 {
 uint cmp_index_ref = 2;

@@ -72,4 +72,4 @@ template BurnShieldedFractionalNFT(depth){
     burned_hash <==  shieldedFractionalNFTburned.nft_hash;
 }
 
-component main = BurnShieldedFractionalNFT(3);
+component main = BurnShieldedFractionalNFT(10);

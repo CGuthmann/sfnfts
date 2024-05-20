@@ -71,7 +71,6 @@ impl NFT for ShieldedFractionalNFT {
         let proof = proof_nft_mint(&json, None, None)?;
 
 
-
         std::io::stdout().flush().unwrap();
         let index = ledger_authority.mint(&proof)?;
 
@@ -919,13 +918,14 @@ mod witness_generation {
 mod test {
     use super::*;
 
-    use std::{io::{stdin, stdout, Read, Write}, str::FromStr};
+    use std::{io::{stdin, stdout, Read, Write}, str::FromStr, time::Instant};
 
     use crate::{shielded_fractional_nft::ShieldedFractionalNFT, *};
     use num_bigint::BigInt;
     use num_traits::Num;
     use ledger_authority::remote_ledger_authority::RemoteLedgerAuthority;
 
+    const TREE_DEPTH: u32 = 10;
     #[test]
     fn test_nft_local() {
         let source = BigInt::from_str("333").unwrap();
@@ -940,8 +940,9 @@ mod test {
         let owner_b_priv = BigInt::from_str("3").unwrap();
         let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
 
+        println!("Ledger authority init start");
         let mut ledger_authority: DefaultLedgerAuthority<PoseidonHasher, 2> = DefaultLedgerAuthority::new(
-            3,
+            TREE_DEPTH,
             vec![
                 trusted_pub.to_string(),
                 "2".to_owned(),
@@ -950,16 +951,17 @@ mod test {
                 "5".to_owned(),
             ],
         );
+        println!("Ledger authority init finished");
 
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
-
+        println!("Membership proof done!");
 
         let nft_wrap =
             ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
                 ;
-
         let nft = nft_wrap.unwrap();
+        println!("Nft minted");
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
                 &owner_a_priv,
@@ -969,6 +971,7 @@ mod test {
                 &mut ledger_authority,
             )
             .unwrap();
+        
 
             match nft_b.burn(&owner_b_priv,&mut ledger_authority){
                 Ok(_) => (),
@@ -1128,4 +1131,68 @@ mod test {
         stdout.flush().unwrap();
         stdin().read(&mut [0]).unwrap();
     }
+
+    
+    #[test]
+    pub fn nft_throughput(){
+        println!("Bench init");
+        let source = BigInt::from_str("333").unwrap();
+        let value = BigInt::from_str("120").unwrap();
+        
+        let trusted_priv = BigInt::from_str("1").unwrap();
+        let trusted_pub = BigInt::from_str("18586133768512220936620570745912940619677854269274689475585506675881198879027").unwrap();
+
+        let owner_a_priv = BigInt::from_str("2").unwrap();
+        let owner_a_pub = BigInt::from_str("8645981980787649023086883978738420856660271013038108762834452721572614684349").unwrap(); //poseidon of 2
+
+        let owner_b_priv = BigInt::from_str("3").unwrap();
+        let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
+
+        let mut ledger_authority = RemoteLedgerAuthority::new("http://192.168.178.87:8000".to_string());
+
+        
+        let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
+
+        let nft_proof_wrap =
+            ShieldedFractionalNFT::new_bench_ledger(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+                ;
+
+        let nft_proof = nft_proof_wrap.unwrap();
+        let start = Instant::now();
+        let n = 10;
+        //for i in (1..n){
+        //    let nft = ledger_authority.mint(&nft_proof).unwrap();
+        //}
+        let ellapsed = start.elapsed();
+
+        println!("Minting {} NFTS took {:.2?}ms",n,ellapsed.as_millis());
+
+        let nft_wrap =
+        ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+            ;
+
+        let nft = nft_wrap.unwrap();
+
+        let proof = nft
+        .transfer_split_bench_ledger(
+            &owner_a_priv,
+            [BigInt::from(1), BigInt::from(2)],
+            &owner_a_pub,
+            &owner_b_pub,
+            &mut ledger_authority,
+        )
+        .unwrap();
+
+        let start = Instant::now();
+        for i in (1..n){
+            let nft = 
+            ledger_authority.transfer_bench(&proof).unwrap();
+        }
+        let ellapsed = start.elapsed();
+
+        
+        println!("Transfering {} NFTS took {:.2?}ms",n,ellapsed.as_millis());
+    }
+
+
 }

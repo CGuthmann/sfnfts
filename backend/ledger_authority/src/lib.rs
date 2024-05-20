@@ -54,6 +54,7 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRA
 
         let leave_count = BRANCHING_FACTOR.pow(tree_depth);
         let leaves = vec!["0".to_owned(); leave_count];
+        
         let initial_tree = HashTree::<H,BRANCHING_FACTOR>::new(&leaves);
         let initial_root = initial_tree.get_root().clone();
         return DefaultLedgerAuthority{
@@ -245,7 +246,7 @@ mod test{
         BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
 
         let ledger_authority = 
-            DefaultLedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
+            DefaultLedgerAuthority::<PoseidonHasher,2>::new(20, vec![private_key.to_string()]);
         
     }
 
@@ -256,7 +257,7 @@ mod test{
         BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
 
         let ledger_authority = 
-            DefaultLedgerAuthority::<PoseidonHasher,2>::new(3, vec![private_key.to_string()]);
+            DefaultLedgerAuthority::<PoseidonHasher,2>::new(20, vec![private_key.to_string()]);
 
         let json = serde_json::to_string(&ledger_authority);
     }

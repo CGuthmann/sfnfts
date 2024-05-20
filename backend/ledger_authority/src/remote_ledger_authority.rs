@@ -72,3 +72,12 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
 }
 
 
+impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRANCHING_FACTOR>{
+    
+    pub fn transfer_bench(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
+    -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
+        let client = reqwest::blocking::Client::new();
+        let resp = client.post(self.url.to_owned() + "/transfer_bench").json(proof).send()?;
+        Ok(resp.json()?)
+    }
+}
