@@ -2,6 +2,7 @@ use std::{error::Error, io::Write, ops::Mul, str::FromStr};
 
 use crate::{FractionalNFT, ShieldedNFT, NFT};
 
+use ark_circom_service::{ArkCircomFullProof, Bn254};
 use crypto::{merkle_tree::MerkleProof, poseidon::PoseidonHasher};
 use num_bigint::{BigInt, RandBigInt};
 use rand::thread_rng;
@@ -78,6 +79,8 @@ impl NFT for ShieldedFractionalNFT {
 
         Ok(nft)
     }
+
+    
 
     fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt) -> Result<Self, Box<dyn std::error::Error>> {
         Err("Unsupported operation.")?
@@ -260,6 +263,296 @@ impl ShieldedFractionalNFT {
         json.push_str(&format!("\"{}salt\":\"{:?}\"", prefix, self.salt));
 
         Ok(())
+    }
+
+     ///Mints a new ShieldedFractionalNFT
+     pub fn new_bench(
+        source: &BigInt,
+        value: &BigInt,
+        owner: &BigInt,
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
+        trust_list_proof: &MerkleProof<PoseidonHasher, 2>,
+        private_key: &BigInt
+    ) -> Result<Self, Box<dyn Error>> {
+        let mut nft = ShieldedFractionalNFT {
+            source_hash: source.clone(),
+            total_quantity: value.clone(),
+            public_key_owner: owner.clone(),
+            fraction: [
+                BigInt::from_str("1").unwrap(),
+                BigInt::from_str("1").unwrap(),
+            ],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+        nft.append_flat_json(&mut json, &"".to_owned())?;
+        json.push(',');
+
+        
+        json.push_str(&format!("\"private_key\":\"{:?}\",", private_key));
+
+        json.push_str(&format!("\"pathTrust\":"));
+        append_json_vector(&mut json, &trust_list_proof.path);
+
+        json.push_str(&format!(",\"lemmaTrust\":"));
+        append_json_vector(&mut json, &trust_list_proof.lemma);
+
+        json.push('}');
+
+
+        let proof = proof_nft_mint(&json, None, None)?;
+
+
+
+        std::io::stdout().flush().unwrap();
+        //let index = ledger_authority.mint(&proof)?;
+
+        //nft.tree_index = index; //updates the merkle tree index stored in the nft
+
+        Ok(nft)
+    }
+
+    ///Mints a new ShieldedFractionalNFT
+    pub fn new_bench_ledger(
+        source: &BigInt,
+        value: &BigInt,
+        owner: &BigInt,
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
+        trust_list_proof: &MerkleProof<PoseidonHasher, 2>,
+        private_key: &BigInt
+    ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+        let mut nft = ShieldedFractionalNFT {
+            source_hash: source.clone(),
+            total_quantity: value.clone(),
+            public_key_owner: owner.clone(),
+            fraction: [
+                BigInt::from_str("1").unwrap(),
+                BigInt::from_str("1").unwrap(),
+            ],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+        nft.append_flat_json(&mut json, &"".to_owned())?;
+        json.push(',');
+
+        
+        json.push_str(&format!("\"private_key\":\"{:?}\",", private_key));
+
+        json.push_str(&format!("\"pathTrust\":"));
+        append_json_vector(&mut json, &trust_list_proof.path);
+
+        json.push_str(&format!(",\"lemmaTrust\":"));
+        append_json_vector(&mut json, &trust_list_proof.lemma);
+
+        json.push('}');
+
+
+        let proof = proof_nft_mint(&json, None, None)?;
+
+
+
+        std::io::stdout().flush().unwrap();
+        //let index = ledger_authority.mint(&proof)?;
+
+        //nft.tree_index = index; //updates the merkle tree index stored in the nft
+
+        Ok(proof)
+    }
+
+    pub fn transfer_split_bench(
+        &self,
+        private_key: &BigInt,
+        fraction: [BigInt; 2],
+        target_a: &BigInt,
+        target_b: &BigInt,
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
+    ) -> Result<(Self, Self), Box<dyn std::error::Error>> {
+
+
+        std::io::stdout().flush().unwrap();
+        
+        let total_nom = fraction[1].clone().mul(self.fraction[0].clone());
+        let nom = fraction[0].clone().mul(self.fraction[0].clone());
+        let denom = self.fraction[1].clone().mul(fraction[1].clone());
+
+
+        //Instantiates the new objects
+
+        let mut nft_a = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target_a.clone(),
+            fraction: [nom.clone(), denom.clone()],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+        let mut nft_b = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target_b.clone(),
+            fraction: [total_nom - nom, denom],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        let merkle_proof =
+            ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
+
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+
+        json.push_str(&format!("\"private_key\":\"{:?}\",", private_key));
+
+        json.push_str(&format!(
+            "\"fraction\":[\"{:?}\",\"{:?}\"],",
+            fraction[0], fraction[1]
+        ));
+
+        self.append_flat_json(&mut json, &"base_".to_owned())?;
+        json.push(',');
+
+        json.push_str(&format!("\"base_tree_index\":\"{:?}\",", self.tree_index.0));
+        json.push_str(&format!("\"base_id\":\"{:?}\",", self.tree_index.1));
+        json.push_str(&format!("\"base_path\":"));
+        append_json_vector(&mut json, &merkle_proof.path);
+        json.push(',');
+        json.push_str(&format!("\"base_lemma\":"));
+        append_json_vector(&mut json, &merkle_proof.lemma);
+        json.push(',');
+
+        nft_a.append_flat_json(&mut json, &"a_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"a_divider\":\"{:?}\",", 1));
+
+        nft_b.append_flat_json(&mut json, &"b_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"b_divider\":\"{:?}\"", 1));
+
+        json.push('}');
+
+
+
+        let proof = proof_nft_transfer(&json, None, None)?;
+
+
+
+        //let (index_a, index_b) = ledger_authority.transfer(&proof)?;
+
+
+        //nft_a.tree_index = index_a;
+        //nft_b.tree_index = index_b;
+
+        return Ok((nft_a, nft_b));
+    }
+
+    pub fn transfer_split_bench_ledger(
+        &self,
+        private_key: &BigInt,
+        fraction: [BigInt; 2],
+        target_a: &BigInt,
+        target_b: &BigInt,
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
+    ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn std::error::Error>> {
+
+
+        std::io::stdout().flush().unwrap();
+        
+        let total_nom = fraction[1].clone().mul(self.fraction[0].clone());
+        let nom = fraction[0].clone().mul(self.fraction[0].clone());
+        let denom = self.fraction[1].clone().mul(fraction[1].clone());
+
+
+        //Instantiates the new objects
+
+        let mut nft_a = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target_a.clone(),
+            fraction: [nom.clone(), denom.clone()],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+        let mut nft_b = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target_b.clone(),
+            fraction: [total_nom - nom, denom],
+            consumed: false,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        let merkle_proof =
+            ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
+
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+
+        json.push_str(&format!("\"private_key\":\"{:?}\",", private_key));
+
+        json.push_str(&format!(
+            "\"fraction\":[\"{:?}\",\"{:?}\"],",
+            fraction[0], fraction[1]
+        ));
+
+        self.append_flat_json(&mut json, &"base_".to_owned())?;
+        json.push(',');
+
+        json.push_str(&format!("\"base_tree_index\":\"{:?}\",", self.tree_index.0));
+        json.push_str(&format!("\"base_id\":\"{:?}\",", self.tree_index.1));
+        json.push_str(&format!("\"base_path\":"));
+        append_json_vector(&mut json, &merkle_proof.path);
+        json.push(',');
+        json.push_str(&format!("\"base_lemma\":"));
+        append_json_vector(&mut json, &merkle_proof.lemma);
+        json.push(',');
+
+        nft_a.append_flat_json(&mut json, &"a_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"a_divider\":\"{:?}\",", 1));
+
+        nft_b.append_flat_json(&mut json, &"b_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"b_divider\":\"{:?}\"", 1));
+
+        json.push('}');
+
+
+
+        let proof = proof_nft_transfer(&json, None, None)?;
+
+
+
+        //let (index_a, index_b) = ledger_authority.transfer(&proof)?;
+
+
+        //nft_a.tree_index = index_a;
+        //nft_b.tree_index = index_b;
+
+        return Ok(proof);
     }
 }
 
