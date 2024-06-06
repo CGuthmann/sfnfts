@@ -127,10 +127,13 @@ mod ledger_authority {
         poseidon::PoseidonHasher,
     };
     use db_service::{sqlite_service::SQLiteService, DatabaseError, PersistentService};
-    use ledger_authority::{DefaultLedgerAuthority, LedgerAuthority};
+    use ledger_authority::{DefaultLedgerAuthority, LedgerAuthority, batched_ledger_authority::BatchedLedgerAuthority};
     use num_bigint::BigInt;
 
-    static mut LA: Option<DefaultLedgerAuthority<PoseidonHasher, 2>> = None;
+    
+    const TREE_DEPTH: u32 = 3;
+
+    static mut LA: Option<BatchedLedgerAuthority<PoseidonHasher, 2>> = None;
 
     pub fn get_ledger_authority(
     ) -> Result<&'static mut DefaultLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
@@ -139,6 +142,7 @@ mod ledger_authority {
                 Some(la) => Ok(la),
                 None => {
                     LA = Some(init_ledger_authority()?);
+                    LA.as_mut().unwrap().init();
                     Ok(LA.as_mut().unwrap())
                 }
             }
@@ -160,7 +164,7 @@ mod ledger_authority {
         }
     }
 
-    fn init_ledger_authority() -> Result<DefaultLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
+    fn init_ledger_authority() -> Result<BatchedLedgerAuthority<PoseidonHasher, 2>, Box<dyn Error>> {
         let db = db::get_db()?;
 
         let la_json_res = db.get_all("ledger_authority")?;
@@ -170,7 +174,7 @@ mod ledger_authority {
         if la_json_res.is_empty() {
             let trust_list = lines_from_file("trust_list");
 
-            let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(10, trust_list);
+            let la = BatchedLedgerAuthority::<PoseidonHasher, 2>::new(TREE_DEPTH, trust_list, 10000);
 
             db.save("ledger_authority", vec!["ID".to_string(), "json".to_string()], vec!["0".to_string(), serde_json::to_string(&la)?])?;
 
@@ -180,7 +184,7 @@ mod ledger_authority {
         match la_json_res[0].get("json") {
             Some(res) => match res {
                 Some(la_json) => {
-                    let la: DefaultLedgerAuthority<PoseidonHasher, 2> = serde_json::from_str(&la_json)?;
+                    let la: BatchedLedgerAuthority<PoseidonHasher, 2> = serde_json::from_str(&la_json)?;
                     return Ok(la);
                 }
                 None => (),
@@ -190,7 +194,7 @@ mod ledger_authority {
 
         let trust_list = lines_from_file("trust_list");
 
-        let la = DefaultLedgerAuthority::<PoseidonHasher, 2>::new(10, trust_list);
+        let la = BatchedLedgerAuthority::<PoseidonHasher, 2>::new(TREE_DEPTH, trust_list, 10000);
 
         Ok(la)
     }
