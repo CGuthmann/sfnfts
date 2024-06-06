@@ -111,6 +111,9 @@ impl NFT for ShieldedFractionalNFT {
         append_json_vector(&mut json, &merkle_proof.lemma);
 
         json.push('}');
+
+    
+
         let proof = proof_nft_burn(&json, None, None)?;
 
 
@@ -208,8 +211,6 @@ impl FractionalNFT for ShieldedFractionalNFT {
         json.push_str(&format!("\"b_divider\":\"{:?}\"", 1));
 
         json.push('}');
-
-
 
         let proof = proof_nft_transfer(&json, None, None)?;
 
@@ -626,12 +627,16 @@ mod witness_generation {
 mod test {
     use super::*;
 
-    use std::{io::{stdin, stdout, Read, Write}, str::FromStr};
-
+    use std::{io::{stdin, stdout, Read, Write}, str::FromStr, thread::sleep, time::Duration};
+    use serde_json::{to_string};
     use crate::{shielded_fractional_nft::ShieldedFractionalNFT, *};
     use num_bigint::BigInt;
     use num_traits::Num;
-    use ledger_authority::remote_ledger_authority::RemoteLedgerAuthority;
+    use ledger_authority::{batched_ledger_authority::BatchedLedgerAuthority, remote_ledger_authority::RemoteLedgerAuthority};
+
+    static mut ledger_authority_batched: Option<BatchedLedgerAuthority<PoseidonHasher, 2>> = None;
+
+    const TREE_DEPTH: u32 = 3;
 
     #[test]
     fn test_nft_local() {
@@ -648,7 +653,7 @@ mod test {
         let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
 
         let mut ledger_authority: DefaultLedgerAuthority<PoseidonHasher, 2> = DefaultLedgerAuthority::new(
-            3,
+            TREE_DEPTH,
             vec![
                 trusted_pub.to_string(),
                 "2".to_owned(),
@@ -714,6 +719,8 @@ mod test {
                         panic!("Error")
                     },
                 };
+                
+        sleep(Duration::from_millis(12000));
 
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
@@ -724,6 +731,8 @@ mod test {
                 &mut ledger_authority,
             )
             .unwrap();
+        
+        sleep(Duration::from_millis(12000));
 
         match nft_b.burn(&owner_b_priv,&mut ledger_authority){
             Ok(_) => (),
@@ -734,6 +743,157 @@ mod test {
 
 
     }
+
+
+    #[test]
+    fn test_nft_batched_manuell() {
+        let source = BigInt::from_str("333").unwrap();
+        let value = BigInt::from_str("120").unwrap();
+        
+        let trusted_priv = BigInt::from_str("1").unwrap();
+        let trusted_pub = BigInt::from_str("18586133768512220936620570745912940619677854269274689475585506675881198879027").unwrap();
+
+        let owner_a_priv = BigInt::from_str("2").unwrap();
+        let owner_a_pub = BigInt::from_str("8645981980787649023086883978738420856660271013038108762834452721572614684349").unwrap(); //poseidon of 2
+
+        let owner_b_priv = BigInt::from_str("3").unwrap();
+        let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
+        dbg!("LA init ");
+        unsafe { ledger_authority_batched = Some(BatchedLedgerAuthority::new(
+            TREE_DEPTH,
+            vec![
+                trusted_pub.to_string(),
+                "2".to_owned(),
+                "3".to_owned(),
+                "4".to_owned(),
+                "5".to_owned(),
+            ],
+            10000
+        )) };
+
+        
+        match unsafe { ledger_authority_batched.as_mut() } {
+            Some(ledger_authority) => {
+                
+        
+        dbg!("Gen trust lsit proof");
+        let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
+
+
+        dbg!("Gen new NFT");
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+                ;
+
+        let nft = nft_wrap.unwrap();
+        dbg!("Root {}", ledger_authority.get_tree()[0].get_root());
+        
+        ledger_authority.update();
+        
+        dbg!("Root {}", ledger_authority.get_tree()[0].get_root());
+        let (mut nft_a,mut nft_b) = nft
+            .transfer_split(
+                &owner_a_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                ledger_authority,
+            )
+            .unwrap();
+
+        println!("\n\n\n\n{}\n\n", ledger_authority.get_tree()[0].to_string());
+    
+        ledger_authority.update();
+        
+        println!("\n\n{}\n\n\n\n", ledger_authority.get_tree()[0].to_string());
+
+        match nft_b.burn(&owner_b_priv,ledger_authority){
+            Ok(_) => (),
+            Err(err) => panic!("{}", err.to_string()),
+        }
+
+
+            },
+            None => todo!(),
+        }
+
+    }
+
+    #[test]
+    fn test_nft_batched_intervall() {
+        let source = BigInt::from_str("333").unwrap();
+        let value = BigInt::from_str("120").unwrap();
+        
+        let trusted_priv = BigInt::from_str("1").unwrap();
+        let trusted_pub = BigInt::from_str("18586133768512220936620570745912940619677854269274689475585506675881198879027").unwrap();
+
+        let owner_a_priv = BigInt::from_str("2").unwrap();
+        let owner_a_pub = BigInt::from_str("8645981980787649023086883978738420856660271013038108762834452721572614684349").unwrap(); //poseidon of 2
+
+        let owner_b_priv = BigInt::from_str("3").unwrap();
+        let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
+        dbg!("LA init ");
+        unsafe { ledger_authority_batched = Some(BatchedLedgerAuthority::new(
+            TREE_DEPTH,
+            vec![
+                trusted_pub.to_string(),
+                "2".to_owned(),
+                "3".to_owned(),
+                "4".to_owned(),
+                "5".to_owned(),
+            ],
+            10000
+        )) };
+
+        unsafe { ledger_authority_batched.as_mut().unwrap().init() };
+        
+        match unsafe { ledger_authority_batched.as_mut() } {
+            Some(ledger_authority) => {
+                
+
+        dbg!("Gen trust lsit proof");
+        let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
+
+
+        dbg!("Gen new NFT");
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+                ;
+
+        let nft = nft_wrap.unwrap();
+        dbg!("Root {}", ledger_authority.get_tree()[0].get_root());
+        
+        sleep(Duration::from_millis(12000));
+        
+        dbg!("Root {}", ledger_authority.get_tree()[0].get_root());
+        let (mut nft_a,mut nft_b) = nft
+            .transfer_split(
+                &owner_a_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                ledger_authority,
+            )
+            .unwrap();
+
+        println!("\n\n\n\n{}\n\n", ledger_authority.get_tree()[0].to_string());
+    
+        sleep(Duration::from_millis(12000));
+        
+        println!("\n\n{}\n\n\n\n", ledger_authority.get_tree()[0].to_string());
+
+        match nft_b.burn(&owner_b_priv,ledger_authority){
+            Ok(_) => (),
+            Err(err) => panic!("{}", err.to_string()),
+        }
+
+
+            },
+            None => todo!(),
+        }
+
+    }
+
 
     #[test]
     fn example_nft_backend(){

@@ -6,6 +6,7 @@ use ark_circom_service::{ArkCircomFullProof,Bn254};
 use serde::{Deserialize, Serialize};
 
 pub mod remote_ledger_authority;
+pub mod batched_ledger_authority;
 
 pub trait LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize> {
     fn mint(&mut self, proof: &ArkCircomFullProof<Bn254>)
