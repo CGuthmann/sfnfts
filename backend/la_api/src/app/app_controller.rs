@@ -1,7 +1,7 @@
 //! The main controller for "/" routes.
 use std::hash::Hash;
 
-use crypto::merkle_tree::HashTree;
+use crypto::merkle_tree::{HashTree, MerkleProof};
 use crypto::poseidon::PoseidonHasher;
 use num_bigint::BigInt;
 use rocket::http::Status;
@@ -124,6 +124,38 @@ pub async fn post_burn(
     proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
 ) -> Result<Json<(usize,usize)>, Status> {
     let status= app_service::post_burn(proof).await;
+    match status {
+        Ok(res) => Ok(Json(res)),
+        Err(_) => Err(Status::InternalServerError),
+    }
+}
+
+#[get("/get_merkle_proof", format = "json", data = "<proof>")]
+pub async fn get_merkle_proof(
+    proof: Json<(usize,usize)>,
+) -> Result<Json<MerkleProof<PoseidonHasher,2>>, Status> {
+    let status= app_service::get_merkle_proof(proof).await;
+    match status {
+        Ok(res) => Ok(Json(res)),
+        Err(_) => Err(Status::InternalServerError),
+    }
+}
+
+#[get("/get_trust_proof", format = "json", data = "<proof>")]
+pub async fn get_trust_proof(
+    proof: Json<usize>,
+) -> Result<Json<MerkleProof<PoseidonHasher,2>>, Status> {
+    let status= app_service::get_trust_proof(proof).await;
+    match status {
+        Ok(res) => Ok(Json(res)),
+        Err(_) => Err(Status::InternalServerError),
+    }
+}
+
+
+#[get("/get_duration")]
+pub async fn get_duration() -> Result<Json<Vec<Vec<u128>>>, Status> {
+    let status= app_service::get_duration().await;
     match status {
         Ok(res) => Ok(Json(res)),
         Err(_) => Err(Status::InternalServerError),

@@ -17,6 +17,7 @@ template MintShieldedFractionalNFT(depth){
     signal input lemmaTrust[depth+2];
 
     signal output nft_hash; //0
+    signal output trust_root; //1
     
     component shieldedFractionalNFTbase = ShieldedFractionalNFTbase();
 
@@ -47,6 +48,7 @@ template MintShieldedFractionalNFT(depth){
     }	
     merkleProof.lemma[depth + 1] <== lemmaTrust[depth+1];
 
+    trust_root <== merkleProof.lemma[depth + 1];
 }
 
-component main = MintShieldedFractionalNFT(3);
+component main = MintShieldedFractionalNFT(20);

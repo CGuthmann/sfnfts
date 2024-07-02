@@ -98,6 +98,9 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
         if proof.verify()? == false {
             Err("Invalid proof!")?
         }
+        if !self.trust_list.get_root().eq(&proof.outputs[1]){
+            Err("Invalid trust root!")?
+        }
         self.tree[self.current_tree_index].update(self.next_index,proof.outputs[0].to_string());
         self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
         let index = (self.current_tree_index,self.next_index);

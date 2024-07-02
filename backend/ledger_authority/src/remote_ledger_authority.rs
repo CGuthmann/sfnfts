@@ -1,6 +1,6 @@
 use std::{iter::Repeat, marker::PhantomData};
 
-use crypto::{merkle_tree::{fill_vec, HashTree}, poseidon::PoseidonHasher, HashFunction};
+use crypto::{merkle_tree::{fill_vec, HashTree, MerkleProof}, poseidon::PoseidonHasher, HashFunction};
 use num_bigint::BigInt;
 
 use crate::LedgerAuthority;
@@ -78,6 +78,28 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRA
     -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
         let resp = client.post(self.url.to_owned() + "/transfer_bench").json(proof).send()?;
+        Ok(resp.json()?)
+    }
+
+    pub fn get_merkle_proof(&mut self, index: (usize,usize))
+    -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
+        let client = reqwest::blocking::Client::new();
+        let resp = client.get(self.url.to_owned() + "/get_merkle_proof").json(&index).send()?;
+        Ok(resp.json()?)
+    }
+    
+    pub fn get_trust_proof(&mut self, index: usize)
+    -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
+        let client = reqwest::blocking::Client::new();
+        let resp = client.get(self.url.to_owned() + "/get_trust_proof").json(&index).send()?;
+        Ok(resp.json()?)
+    }
+
+
+    pub fn get_duration(&mut self)    
+    -> Result<Vec<Vec<u128>>,Box<dyn std::error::Error>> {
+        let client = reqwest::blocking::Client::new();
+        let resp = client.get(self.url.to_owned() + "/get_duration").send()?;
         Ok(resp.json()?)
     }
 }
