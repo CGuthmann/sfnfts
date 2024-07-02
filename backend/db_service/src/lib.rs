@@ -335,15 +335,19 @@ mod tests {
     use ctor::dtor;
     use std::env::current_dir;
     use std::fs::remove_file;
+    use std::sync::Mutex;
     use super::*;
 
     const DB_NAME: &str = "test.db";
     const TABLE_NAME: &str = "test_entity";
 
+    struct Executor;
+    static DB_USER: Mutex<Executor> = Mutex::new(Executor);
+    
     #[dtor]
     fn clean_up() {
         let current_path =  current_dir().unwrap()
-            .with_file_name("db_service/test.db");
+            .with_file_name("db_service/".to_owned() + DB_NAME);
 
         if current_path.as_path().exists(){
             remove_file(current_path.as_path()).unwrap();
@@ -356,6 +360,10 @@ mod tests {
 
     #[test]
     fn save_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -368,6 +376,10 @@ mod tests {
 
     #[test]
     fn get_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -382,6 +394,10 @@ mod tests {
 
     #[test]
     fn get_all_structs() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -401,6 +417,10 @@ mod tests {
 
     #[test]
     fn update_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -420,6 +440,10 @@ mod tests {
 
     #[test]
     fn delete_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -438,6 +462,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn get_deleted_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
@@ -455,6 +483,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn get_non_existent_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t: Table<TestEntity, SQLiteService> = Table::new(TABLE_NAME, &s);
@@ -464,6 +496,11 @@ mod tests {
 
     #[test]
     fn delete_non_existent_struct() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
+        clean_up();
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
 
@@ -477,6 +514,10 @@ mod tests {
 
     #[test]
     fn update_unsaved() {
+        let _guard  = match DB_USER.lock() {
+            Ok(guard) => guard,
+            Err(e) => e.into_inner(),
+        };
         let s = SQLiteService::new(DB_NAME);
         let t = Table::new(TABLE_NAME, &s);
 

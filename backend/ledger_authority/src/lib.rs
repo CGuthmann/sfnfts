@@ -212,7 +212,7 @@ mod test{
         BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
 
         let ledger_authority = 
-            DefaultLedgerAuthority::<PoseidonHasher,2>::new(20, vec![private_key.to_string()]);
+            DefaultLedgerAuthority::<PoseidonHasher,2>::new(10, vec![private_key.to_string()]);
 
         let json = serde_json::to_string(&ledger_authority);
     }
