@@ -51,4 +51,4 @@ template MintShieldedFractionalNFT(depth){
     trust_root <== merkleProof.lemma[depth + 1];
 }
 
-component main = MintShieldedFractionalNFT(20);
+component main = MintShieldedFractionalNFT(10);

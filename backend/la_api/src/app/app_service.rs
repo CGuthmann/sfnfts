@@ -76,24 +76,6 @@ pub async fn post_transfer(
     }
 }
 
-pub async fn post_transfer_bench(
-    proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
-) -> Result<((usize,usize),(usize,usize)), &'static str> {
-    match ledger_authority::get_ledger_authority() {
-        Ok(la) => {
-            match la.transfer_bench(&proof_json.into_inner()) {
-                Ok(res) => {
-                    match save_ledger_authority() {
-                        Ok(_) =>  Ok(res),
-                        Err(_) => Err("Transfer failed."),
-                    }
-                },
-                Err(_) => Err("Transfer failed."),
-            }
-        },
-        Err(_) => Err("Ledger authority currently unavailable."),
-    }
-}
 
 pub async fn post_burn(
     proof_json: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>
@@ -145,18 +127,6 @@ pub async fn get_trust_proof(
     }
 }
 
-
-pub async fn get_duration() -> Result<Vec<Vec<u128>>, &'static str> {
-    match ledger_authority::get_ledger_authority() {
-        Ok(la) => {
-            match la.get_duration(){
-                Ok(res) => Ok(res),
-                Err(_) => Err("Durations could not be calculated"),
-            }
-        },
-        Err(_) => Err("Ledger authority currently unavailable."),
-    }
-}
 mod ledger_authority {
     use std::{
         error::Error,
@@ -174,7 +144,7 @@ mod ledger_authority {
     use num_bigint::BigInt;
 
     
-    const TREE_DEPTH: u32 = 22;
+    const TREE_DEPTH: u32 = 10;
     const TRUST_DEPTH: u32 = 10;
     const UPDATE_INTERVALL_MS: usize = 10000;
 

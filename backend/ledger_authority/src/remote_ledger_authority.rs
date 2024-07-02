@@ -74,13 +74,6 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
 
 impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRANCHING_FACTOR>{
     
-    pub fn transfer_bench(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
-    -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
-        let client = reqwest::blocking::Client::new();
-        let resp = client.post(self.url.to_owned() + "/transfer_bench").json(proof).send()?;
-        Ok(resp.json()?)
-    }
-
     pub fn get_merkle_proof(&mut self, index: (usize,usize))
     -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
@@ -92,14 +85,6 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRA
     -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
         let resp = client.get(self.url.to_owned() + "/get_trust_proof").json(&index).send()?;
-        Ok(resp.json()?)
-    }
-
-
-    pub fn get_duration(&mut self)    
-    -> Result<Vec<Vec<u128>>,Box<dyn std::error::Error>> {
-        let client = reqwest::blocking::Client::new();
-        let resp = client.get(self.url.to_owned() + "/get_duration").send()?;
         Ok(resp.json()?)
     }
 }

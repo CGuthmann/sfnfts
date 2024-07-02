@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
-use std::time::{Duration, Instant};
+
+use std::time::Duration;
 use std::{iter::Repeat, marker::PhantomData};
 use std::error::Error;
 
@@ -41,10 +42,7 @@ struct BatchedLedgerAuthorityInner<H: HashFunction, const BRANCHING_FACTOR: usiz
 
     update_tree_index: usize,
     update_next_index: usize,
-    update_leaves: Vec<String>,
-    duration_mint: Vec<Vec<u32>>,
-    duration_transfer: Vec<Vec<u32>>,
-    duration_burn: Vec<Vec<u32>>,
+    update_leaves: Vec<String>
 }
 
 pub mod vectorize {
@@ -89,25 +87,19 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
     fn mint(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<(usize,usize),Box<dyn std::error::Error>> {
 
-        let mut start = Instant::now();
         if proof.verify()? == false {
             Err("Invalid proof!")?
-        }
-        self.duration_mint[1].push(start.elapsed().as_nanos() as u32);
+        }        
 
-        
-        let mut start = Instant::now();
         if !self.trust_list.get_root().eq(&proof.outputs[1]){
             Err("Invalid trust root!")?
         }
-        self.duration_mint[2].push(start.elapsed().as_nanos() as u32);
-
-        start = Instant::now();
+        
         let index = (self.update_tree_index,self.update_next_index);
         self.increase_index();
 
         self.update_leaves.push(proof.outputs[0].to_string());
-        self.duration_mint[3].push(start.elapsed().as_nanos() as u32);
+
 
         Ok(index)
     }
@@ -115,26 +107,18 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
     fn transfer(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
         
-        let mut start = Instant::now();
         if self.nullifier.contains(&proof.outputs[0]){
             Err("Nullified nft!")?
         }
-        self.duration_transfer[0].push(start.elapsed().as_nanos() as u32);
 
-        start = Instant::now();
         if proof.verify()? == false {
             Err("Invalid proof!")?
         }
-        self.duration_transfer[1].push(start.elapsed().as_nanos() as u32);
 
-        start = Instant::now();
         if !self.tree_roots[&proof.outputs[2]]{
             Err("Invalid merkle root!")?
         }
-        self.duration_transfer[2].push(start.elapsed().as_nanos() as u32);
 
-
-        start = Instant::now();
         self.nullifier.push(proof.outputs[0].clone());
 
         let index_a = (self.update_tree_index,self.update_next_index);
@@ -145,8 +129,6 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
         self.increase_index();
         self.update_leaves.push(proof.outputs[4].to_string());
 
-        self.duration_transfer[3].push(start.elapsed().as_nanos() as u32);
-
 
         Ok((index_a,index_b))     
     }
@@ -154,32 +136,25 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
     fn burn(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<(usize,usize),Box<dyn std::error::Error>> {
        
-        let mut start = Instant::now();
         if self.nullifier.contains(&proof.outputs[0]){
             Err("Nullified nft!")?
         }
-        self.duration_burn[0].push(start.elapsed().as_nanos() as u32);
 
-        start = Instant::now();
         if proof.verify()? == false {
             Err("Invalid proof!")?
         }
-        self.duration_burn[1].push(start.elapsed().as_nanos() as u32);
 
-        start = Instant::now();
         if !self.tree_roots[&proof.outputs[2]]{
             Err("Invalid merkle root!")?
         }
-        self.duration_burn[2].push(start.elapsed().as_nanos() as u32);
+       
 
-        
-        start = Instant::now();
         self.update_leaves.push(proof.outputs[3].to_string());
 
         let index = (self.update_tree_index,self.update_next_index);
         self.increase_index();
         self.nullifier.push(proof.outputs[0].clone());
-        self.duration_burn[3].push(start.elapsed().as_nanos() as u32);
+
 
         
 
@@ -223,10 +198,7 @@ impl<H: HashFunction> BatchedLedgerAuthorityInner<H, 2> {
             leave_count,
             update_tree_index: 0,
             update_next_index: 0,
-            update_leaves: Vec::new(),
-            duration_mint: vec![Vec::new();4]   ,
-            duration_transfer: vec![Vec::new();4]    ,
-            duration_burn: vec![Vec::new();4]   ,         
+            update_leaves: Vec::new(),         
         }
     }
     pub fn update(&mut self){
@@ -278,116 +250,7 @@ impl<H: HashFunction> BatchedLedgerAuthorityInner<H, 2> {
             self.update_next_index = 0;                       
         }
 
-    }      
-    
-    pub fn transfer_bench(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
-    -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
-        
-        if self.nullifier.contains(&proof.outputs[0]){
-            unsafe { UNUSED_COUNTER = UNUSED_COUNTER +1 };
-        }
-
-        if proof.verify()? == false {
-            Err("Invalid proof!")?
-        }
-
-        if !self.tree_roots[&proof.outputs[2]]{
-            Err("Invalid merkle root!")?
-        }
-
-        self.nullifier.push(proof.outputs[0].clone());
-
-        let index_a = (self.update_tree_index,self.update_next_index);
-        self.increase_index();
-        self.update_leaves.push(proof.outputs[3].to_string());
-
-        let index_b = (self.update_tree_index,self.update_next_index);
-        self.increase_index();
-        self.update_leaves.push(proof.outputs[4].to_string());
-
-
-        Ok((index_a,index_b))  
-    }
-    
-    pub fn get_duration(&mut self) -> Result<Vec<Vec<u128>>,Box<dyn std::error::Error>> {
-
-        let mut nullifier_duration_mint = 0 as u128;
-        if self.duration_mint[0].len() > 0 {
-            nullifier_duration_mint = self.duration_mint[0].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_mint[0].len() as u128);
-        }
-        
-        let mut zkp_duration_mint = 0 as u128;
-        if self.duration_mint[1].len() > 0 {
-            zkp_duration_mint = self.duration_mint[1].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_mint[1].len() as u128);
-        }
-
-        let mut validating_duration_mint = 0 as u128;
-        if self.duration_mint[2].len() > 0 {
-            validating_duration_mint = self.duration_mint[2].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_mint[2].len() as u128);
-        }
-
-        let mut registering_duration_mint = 0 as u128;
-        if self.duration_mint[3].len() > 0 {
-            registering_duration_mint = self.duration_mint[3].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_mint[3].len() as u128);
-        }
-
-        
-        let mint_durations = vec![nullifier_duration_mint,zkp_duration_mint,validating_duration_mint,registering_duration_mint];
-
-
-        
-        let mut nullifier_duration_transfer = 0 as u128;
-        if self.duration_transfer[0].len() > 0 {
-            nullifier_duration_transfer = self.duration_transfer[0].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_transfer[0].len() as u128);
-        }
-        
-        let mut zkp_duration_transfer = 0 as u128;
-        if self.duration_transfer[1].len() > 0 {
-            zkp_duration_transfer = self.duration_transfer[1].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_transfer[1].len() as u128);
-        }
-
-        let mut validating_duration_transfer = 0 as u128;
-        if self.duration_transfer[2].len() > 0 {
-            validating_duration_transfer = self.duration_transfer[2].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_transfer[2].len() as u128);
-        }
-
-        let mut registering_duration_transfer = 0 as u128;
-        if self.duration_transfer[3].len() > 0 {
-            registering_duration_transfer = self.duration_transfer[3].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_transfer[3].len() as u128);
-        }
-
-        
-        let transfer_durations = vec![nullifier_duration_transfer,zkp_duration_transfer,validating_duration_transfer,registering_duration_transfer];
-
-
-        
-        let mut nullifier_duration_burn = 0 as u128;
-        if self.duration_burn[0].len() > 0 {
-            nullifier_duration_burn = self.duration_burn[0].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_burn[0].len() as u128);
-        }
-        
-        let mut zkp_duration_burn = 0 as u128;
-        if self.duration_burn[1].len() > 0 {
-            zkp_duration_burn = self.duration_burn[1].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_burn[1].len() as u128);
-        }
-
-        let mut validating_duration_burn = 0 as u128;
-        if self.duration_burn[2].len() > 0 {
-            validating_duration_burn = self.duration_burn[2].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_burn[2].len() as u128);
-        }
-
-        let mut registering_duration_burn = 0 as u128;
-        if self.duration_burn[3].len() > 0 {
-            registering_duration_burn = self.duration_burn[3].iter().fold(0u128, |sum, i| sum + (*i as u128))/(self.duration_burn[3].len() as u128);
-        }
-
-        
-        let burn_durations = vec![nullifier_duration_burn,zkp_duration_burn,validating_duration_burn,registering_duration_burn];
-
-        
-
-        Ok(vec![mint_durations, transfer_durations,burn_durations])
-    }
+    }     
 
 }
 
@@ -452,16 +315,4 @@ impl<H: HashFunction> BatchedLedgerAuthority<H, 2>{
         inner.update();
     }
 
-    pub fn transfer_bench(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
-    -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
-        let mut inner = self.inner.lock().unwrap();
-        inner.transfer_bench(proof)
-        
-    }
-
-    pub fn get_duration(&mut self)
-    -> Result<Vec<Vec<u128>>,Box<dyn std::error::Error>> {
-        let mut inner = self.inner.lock().unwrap();
-        inner.get_duration()        
-    }
 }

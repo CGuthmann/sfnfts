@@ -196,45 +196,6 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
 
 }
 
-impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRANCHING_FACTOR>{
-    ///Transfers and splits an nft to two parties and returns the merkle tree indices
-    /// 
-    /// # Arguments
-    /// 
-    /// * 'proof' - A ZKP proofing the validity of the new NFT (nft_transfer)
-    pub fn transfer_bench(&mut self, proof: &ArkCircomFullProof<Bn254>)
-    -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>{
-
-        if self.nullifier.contains(&proof.outputs[0]){
-            //Err("Nullified nft!")?
-        }
-
-        if proof.verify()? == false {
-            Err("Invalid proof!")?
-        }
-
-        let proof_root = &proof.outputs[2];
-
-        if !self.tree_roots[proof.outputs[1].to_string().parse::<usize>()?].contains(proof_root) {
-            //Err("Invalid merkle root!")?
-        }
-
-        self.tree[self.current_tree_index].update(self.next_index,proof.outputs[3].to_string());
-        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
-        let index_a = (self.current_tree_index,self.next_index);
-        self.increase_index();
-
-        self.tree[self.current_tree_index].update(self.next_index,proof.outputs[4].to_string());
-        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
-        let index_b = (self.current_tree_index,self.next_index);
-        self.increase_index();
-
-        self.nullifier.push(proof.outputs[0].clone());
-
-        Ok((index_a,index_b))       
-        
-    }
-}
 
 #[cfg(test)]
 mod test{

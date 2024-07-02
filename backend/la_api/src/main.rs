@@ -14,11 +14,9 @@ fn rocket() -> _ {
            app::app_controller::get_merkle_tree,
            app::app_controller::post_mint,
            app::app_controller::post_transfer,
-           app::app_controller::post_transfer_bench,
            app::app_controller::post_burn,
            app::app_controller::get_merkle_proof,
            app::app_controller::get_trust_proof,
-           app::app_controller::get_duration
        ])
     // maybe register catcher later
 }

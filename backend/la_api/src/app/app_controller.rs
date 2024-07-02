@@ -107,17 +107,6 @@ pub async fn post_transfer(
     }
 }
 
-#[post("/transfer_bench", format = "json", data = "<proof>")]
-pub async fn post_transfer_bench(
-    proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
-) -> Result<Json<((usize,usize),(usize,usize))>, Status> {
-    let index = app_service::post_transfer_bench(proof).await;
-    match index {
-        Ok(res) => Ok(Json(res)),
-        Err(_) => Err(Status::InternalServerError),
-    }
-}
-
 
 #[post("/burn", format = "json", data = "<proof>")]
 pub async fn post_burn(
@@ -146,16 +135,6 @@ pub async fn get_trust_proof(
     proof: Json<usize>,
 ) -> Result<Json<MerkleProof<PoseidonHasher,2>>, Status> {
     let status= app_service::get_trust_proof(proof).await;
-    match status {
-        Ok(res) => Ok(Json(res)),
-        Err(_) => Err(Status::InternalServerError),
-    }
-}
-
-
-#[get("/get_duration")]
-pub async fn get_duration() -> Result<Json<Vec<Vec<u128>>>, Status> {
-    let status= app_service::get_duration().await;
     match status {
         Ok(res) => Ok(Json(res)),
         Err(_) => Err(Status::InternalServerError),

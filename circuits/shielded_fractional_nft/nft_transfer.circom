@@ -164,4 +164,4 @@ template ShieldedFractionalNFTTransfer(depth){
 
 }
 
-component main = ShieldedFractionalNFTTransfer(22);
+component main = ShieldedFractionalNFTTransfer(10);
