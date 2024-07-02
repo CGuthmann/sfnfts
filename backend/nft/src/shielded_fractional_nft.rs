@@ -81,7 +81,7 @@ impl NFT for ShieldedFractionalNFT {
 
     
 
-    fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt) -> Result<Self, Box<dyn std::error::Error>> {
+    fn transfer(&self, ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, target: &BigInt, private_key: &BigInt) -> Result<Self, Box<dyn std::error::Error>> {
         Err("Unsupported operation.")?
     }
 
@@ -220,7 +220,7 @@ impl FractionalNFT for ShieldedFractionalNFT {
 
 
         std::io::stdout().flush().unwrap();
-        let (index_a, index_b) = ledger_authority.transfer(&proof)?;
+        let (index_a, index_b) = ledger_authority.transfer_split(&proof)?;
 
 
         nft_a.tree_index = index_a;
@@ -267,7 +267,20 @@ impl ShieldedFractionalNFT {
     }
 
 
-  ///Mints a new ShieldedFractionalNFT
+  
+    ///Mints a new NFT.
+    /// Creates the trust_list_proof remote at the ledger_authority.
+    /// This reveals the trust_list index to the [RemoteLedgerAuthority]
+    /// # Arguments
+    /// * `source` - source/type ID
+    /// * `value` - stored value in the [NFT]
+    /// * `ledger_authority` - [RemoteLedgerAuthority] in which this [NFT] will be created
+    /// * `owner` - hashed owner private key
+    /// * `trust_list_index` - index of the private key in the [RemoteLedgerAuthority] trust list
+    /// * `private_key` - private key corresponding to the trust_list_proof
+    ///  
+    /// # Return
+    /// A minted [NFT]
     pub fn new_remote(
         source: &BigInt,
         value: &BigInt,
@@ -320,7 +333,17 @@ impl ShieldedFractionalNFT {
 
         Ok(nft)
     }
-
+    
+    
+    ///Burns the NFT
+    /// Creates the NFT merkle proof remote at the ledger_authority. 
+    /// This reveals the index to the [RemoteLedgerAuthority].
+    /// # Arguments
+    /// * `private_key` - private key corresponding to hashed in the current [NFT]
+    /// * `ledger_authority` - [RemoteLedgerAuthority] in which this [NFT] will be created
+    ///  
+    /// # Return
+    /// The burned [NFT]
     pub fn burn_remote(
         &mut self,
         private_key: &BigInt,
@@ -369,6 +392,19 @@ impl ShieldedFractionalNFT {
     }
 
 
+    /// Transfers the [NFT] to another private key
+    /// Creates the NFT merkle proof remote at the ledger_authority. 
+    /// This reveals the index to the [RemoteLedgerAuthority].
+    /// # Arguments
+    /// * `private_key` - private key corresponding to hashed in the current [NFT]
+    /// * `fraction` - Pair (numerator, denominator) corresponding to the fraction of the current [NFT],
+    ///                 that will be allocated to target_a
+    /// * `target_a` - hashed private key for the first new [NFT]
+    /// * `target_b` - hashed private key for the second new [NFT]
+    /// * `ledger_authority` - [LedgerAuthority] in which this [NFT] is registered
+    ///  
+    /// # Return
+    /// The two new [NFT]
     pub fn transfer_split_remote(
         &self,
         private_key: &BigInt,
@@ -450,7 +486,7 @@ impl ShieldedFractionalNFT {
 
 
         std::io::stdout().flush().unwrap();
-        let (index_a, index_b) = ledger_authority.transfer(&proof)?;
+        let (index_a, index_b) = ledger_authority.transfer_split(&proof)?;
 
 
         nft_a.tree_index = index_a;

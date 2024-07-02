@@ -62,7 +62,7 @@ pub async fn post_transfer(
 ) -> Result<((usize,usize),(usize,usize)), &'static str> {
     match ledger_authority::get_ledger_authority() {
         Ok(la) => {
-            match la.transfer(&proof_json.into_inner()) {
+            match la.transfer_split(&proof_json.into_inner()) {
                 Ok(res) => {
                     match save_ledger_authority() {
                         Ok(_) =>  Ok(res),

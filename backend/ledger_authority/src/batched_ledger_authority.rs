@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::LedgerAuthority;
 
-
+/// Underlying structure of the [BatchedLedgerAuthority] without timed updates
 #[derive(Debug,Deserialize,Serialize)]
 struct BatchedLedgerAuthorityInner<H: HashFunction, const BRANCHING_FACTOR: usize>{    
     #[serde(bound(
@@ -71,6 +71,11 @@ pub mod vectorize {
     }
 }
 
+
+
+
+ /// A [LedgerAuthority] which stores all the changes (mint/transfer/burn), 
+ /// and applies them in timed batches to the [HashTree]
 #[derive(Debug,Deserialize,Serialize)]
 pub struct BatchedLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>{    
     #[serde(bound(
@@ -103,7 +108,7 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
         Ok(index)
     }
 
-    fn transfer(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
+    fn transfer_split(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
         
         if self.nullifier.contains(&proof.outputs[0]){
@@ -261,10 +266,10 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthority<H,2>{
         inner.mint(&proof)
     }
 
-    fn transfer(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
+    fn transfer_split(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>> {
         let mut inner = self.inner.lock().unwrap();
-        inner.transfer(&proof)
+        inner.transfer_split(&proof)
     }
 
     fn burn(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
@@ -290,14 +295,23 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthority<H,2>{
 }
 
 impl<H: HashFunction> BatchedLedgerAuthority<H, 2>{
-    pub fn new(tree_depth: u32, mut trust_list: Vec<String>,intervall_millis: usize)-> Self{
+
+    /// Creates a new [BatchedLedgerAuthority]
+    /// # Arguments
+    /// * `tree_depth` - depth of the [HashTree] storing the [NFT]
+    /// * `trust_list` - list of the hashed private key of the trusted partys
+    /// * `intervall_millis` - update intervall in ms
+    ///  
+    /// # Return
+    /// A new [BatchedLedgerAuthority]
+    pub fn new(tree_depth: u32, trust_list: Vec<String>,intervall_millis: usize)-> Self{
         BatchedLedgerAuthority{
             inner: Mutex::new(BatchedLedgerAuthorityInner::<H,2>::new(tree_depth, trust_list)),
             intervall_millis
         }
     }
 
-    
+    /// Initializes the timed updates of the [BatchedLedgerAuthority]
     pub fn init(&'static self){           
         
         thread::spawn(move || {
@@ -309,6 +323,8 @@ impl<H: HashFunction> BatchedLedgerAuthority<H, 2>{
         });
     }
 
+    /// Updates the [BatchedLedgerAuthority]
+    /// This applys all stored changes (mint/transfer/burn) at once
     pub fn update(&mut self){
         let mut inner = self.inner.lock().unwrap();
         inner.update();

@@ -9,14 +9,35 @@ pub mod remote_ledger_authority;
 pub mod batched_ledger_authority;
 
 pub trait LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize> {
+
+    
+    ///Mints the new NFT encapsuled in the proof
+    /// # Arguments
+    /// * `proof` - nft_mint ZKP, proofing the validity of the transfer
+    ///  
+    /// # Return
+    /// The index of the minted [NFT] (tree_index, nft_index)
     fn mint(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<(usize,usize),Box<dyn Error>>;
 
-    fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    /// Transfers and splits the [NFT] encapsuled in the proof to two private key
+    /// # Arguments
+    /// * `proof` - nft_transfer ZKP, proofing the validity of the transfer
+    ///  
+    /// # Return
+    /// The indices of the new [NFT] (tree_index, nft_index)
+    fn transfer_split(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>;
 
+    ///Burns the [NFT] encapsuled in the proof
+    /// # Arguments
+    /// * `proof` - nft_burn ZKP, proofing the validity of the burn
+    ///  
+    /// # Return
+    /// The index of the burned [NFT] (tree_index, nft_index)
     fn burn(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<(usize,usize),Box<dyn Error>>;
+
 
     fn get_tree(&self) -> Vec<HashTree<H,BRANCHING_FACTOR>>;  
     fn get_trust_list(&self)-> HashTree<H,2>;
@@ -46,7 +67,14 @@ pub struct DefaultLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize
 }
 
 impl<H:HashFunction, const BRANCHING_FACTOR: usize> DefaultLedgerAuthority<H,BRANCHING_FACTOR>  {
-    ///Initializes a new ledger authority
+    
+    /// Initializes a new [DefaultLedgerAuthority]
+    /// # Arguments
+    /// * `tree_depth` - depth of the [HashTree] storing the [NFT]
+    /// * `trust_list` - list of the hashed private key of the trusted partys
+    ///  
+    /// # Return
+    /// A new [DefaultLedgerAuthority]
     pub fn new(tree_depth: u32, mut trust_list: Vec<String>)
     -> Self{
         
@@ -147,7 +175,7 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     /// # Arguments
     /// 
     /// * 'proof' - A ZKP proofing the validity of the new NFT (nft_transfer)
-    fn transfer(&mut self, proof: &ArkCircomFullProof<Bn254>)
+    fn transfer_split(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>{
 
         if self.nullifier.contains(&proof.outputs[0]){

@@ -16,6 +16,13 @@ pub struct RemoteLedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize>
 }
 
 impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRANCHING_FACTOR>{
+
+    /// Initializes a new [RemoteLedgerAuthority]
+    /// # Arguments
+    /// * `url` - URL of the LedgerAuthorityApi
+    ///  
+    /// # Return
+    /// A new [RemoteLedgerAuthority]
     pub fn new(url: String)-> Self{
         RemoteLedgerAuthority{ 
             url, 
@@ -38,7 +45,7 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
         Ok(resp.json()?)
     }
 
-    fn transfer(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
+    fn transfer_split(&mut self, proof: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
         let resp = client.post(self.url.to_owned() + "/transfer").json(proof).send()?;
@@ -74,6 +81,13 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
 
 impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRANCHING_FACTOR>{
     
+    /// Creates a Merkle Proof for a [NFT] remotly.
+    /// This reveales the index to the LedgerAuthorityAPI
+    /// # Arguments
+    /// * `index` - index of the [NFT]
+    ///  
+    /// # Return
+    /// The Merkle Proof
     pub fn get_merkle_proof(&mut self, index: (usize,usize))
     -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
@@ -81,6 +95,13 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> RemoteLedgerAuthority<H,BRA
         Ok(resp.json()?)
     }
     
+    /// Creates a Merkle Proof for (hashed) private key in the trust_list of the LedgerAuthorityAPI remotly.
+    /// This reveales the index to the LedgerAuthorityAPI
+    /// # Arguments
+    /// * `index` - index of the private key
+    ///  
+    /// # Return
+    /// The Merkle Proof
     pub fn get_trust_proof(&mut self, index: usize)
     -> Result<MerkleProof<PoseidonHasher,2>,Box<dyn std::error::Error>> {
         let client = reqwest::blocking::Client::new();
