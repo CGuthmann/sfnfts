@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::LedgerAuthority;
 
-static mut UNUSED_COUNTER: u32 = 0;
 
 #[derive(Debug,Deserialize,Serialize)]
 struct BatchedLedgerAuthorityInner<H: HashFunction, const BRANCHING_FACTOR: usize>{    

@@ -134,7 +134,7 @@ impl NFT for ShieldedFractionalNFT {
 
 
     fn get_value(&self) -> BigInt {
-        self.total_quantity.clone()
+        (self.total_quantity.clone() * self.fraction[0].clone()) / self.fraction[1].clone()
     }
 }
 
@@ -273,7 +273,7 @@ impl ShieldedFractionalNFT {
         value: &BigInt,
         owner: &BigInt,
         ledger_authority: &mut RemoteLedgerAuthority<PoseidonHasher,2>,
-        trust_list_proof: &MerkleProof<PoseidonHasher, 2>,
+        trust_list_index: usize,
         private_key: &BigInt
     ) -> Result<Self, Box<dyn Error>> {
         let mut nft = ShieldedFractionalNFT {
@@ -289,6 +289,7 @@ impl ShieldedFractionalNFT {
             tree_index: (0, 0),
         };
 
+        let trust_list_proof = ledger_authority.get_trust_proof(trust_list_index)?;
 
         std::io::stdout().flush().unwrap();
         //prepares the input arguments for the ZKP
@@ -872,15 +873,49 @@ mod test {
         );
         println!("Ledger authority init finished");
 
+        //
+        // minting
+        // 
+        println!("Testing minting");
+
+        //default case
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
-        println!("Membership proof done!");
+
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
+                ;
+        let nft = nft_wrap.expect("mint default case");
+
+
+
+        //wrong trust list
+        let proof = ledger_authority.get_trust_list().generate_proof(1).unwrap();
+
 
         let nft_wrap =
             ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
                 ;
-        let nft = nft_wrap.unwrap();
-        println!("Nft minted");
+        
+        nft_wrap.expect_err("mint wrong trust list");
+        
+        //
+        // transfer_split
+        // 
+        println!("Testing transfer");
+        
+        //wrong pk
+        nft
+            .transfer_split(
+                &owner_b_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                &mut ledger_authority,
+            )
+            .expect_err("transfer wrong pk");
+
+        //default case
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
                 &owner_a_priv,
@@ -889,16 +924,40 @@ mod test {
                 &owner_b_pub,
                 &mut ledger_authority,
             )
-            .unwrap();
+            .expect("transfer default case");
         
+            
+        //double spending
+        nft
+        .transfer_split(
+            &owner_a_priv,
+            [BigInt::from(1), BigInt::from(2)],
+            &owner_a_pub,
+            &owner_b_pub,
+            &mut ledger_authority,
+        )
+        .expect_err("transfer double");
 
-            match nft_b.burn(&owner_b_priv,&mut ledger_authority){
-                Ok(_) => (),
-                Err(err) => panic!("{}", err.to_string()),
-            }
+        //
+        // burn
+        // 
+        println!("Testing burn");
+
+        //wrong pk
+        nft_b.burn(&owner_a_priv,&mut ledger_authority).expect_err("burn wrong pk");
+
+        //default case
+        nft_b.burn(&owner_b_priv,&mut ledger_authority).expect("burn default case");
+
+       
+        //wrong pk
+        nft_b.burn(&owner_a_priv,&mut ledger_authority).expect_err("burn double spending");
 
 
-
+        //
+        //get_value
+        //
+        assert_eq!(nft_a.get_value(),BigInt::from_str("60").unwrap());
     }
 
     #[test]
@@ -916,22 +975,68 @@ mod test {
 
         let mut ledger_authority = RemoteLedgerAuthority::new("http://192.168.178.87:8000".to_string());
 
+        println!("Ledger authority init finished");
+
+        //
+        // minting
+        // 
+        println!("Testing minting");
+
+        //default case
         let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
 
 
-
-        let nft = match
+        let nft_wrap =
             ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
-                {
-                    Ok(res) => res,
-                    Err(err) => {
+                ;
+        let nft = nft_wrap.expect("mint default case");
 
-                        panic!("Error")
-                    },
-                };
-                
-        sleep(Duration::from_millis(12000));
 
+        //wrong trust list
+        let proof = ledger_authority.get_trust_list().generate_proof(1).unwrap();
+
+
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+                ;
+        
+        nft_wrap.expect_err("mint wrong trust list");
+        
+
+        
+        //default remote case
+        let nft_wrap2 =
+            ShieldedFractionalNFT::new_remote(&source, &value, &owner_a_pub, &mut ledger_authority, 0,&trusted_priv)
+                ;
+        let nft2 = nft_wrap2.expect("mint default remote case");
+
+        //wrong trust list remote
+        let nft_wrap2 =
+        ShieldedFractionalNFT::new_remote(&source, &value, &owner_a_pub, &mut ledger_authority, 1,&trusted_priv);
+        
+        nft_wrap2.expect_err("mint wrong trust list remote");
+
+
+        sleep(Duration::from_secs(15)); //waiting for tree update
+
+        //
+        // transfer_split
+        // 
+        println!("Testing transfer");
+        
+
+        //wrong pk
+        nft
+            .transfer_split(
+                &owner_b_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                &mut ledger_authority,
+            )
+            .expect_err("transfer wrong pk");
+
+        //default case
         let (mut nft_a,mut nft_b) = nft
             .transfer_split(
                 &owner_a_priv,
@@ -940,17 +1045,84 @@ mod test {
                 &owner_b_pub,
                 &mut ledger_authority,
             )
-            .unwrap();
+            .expect("transfer default case");
         
-        sleep(Duration::from_millis(12000));
+            
+        //double spending
+        nft
+        .transfer_split(
+            &owner_a_priv,
+            [BigInt::from(1), BigInt::from(2)],
+            &owner_a_pub,
+            &owner_b_pub,
+            &mut ledger_authority,
+        )
+        .expect_err("transfer double");
 
-        match nft_b.burn(&owner_b_priv,&mut ledger_authority){
-            Ok(_) => (),
-            Err(err) => panic!("{}", err.to_string()),
-        }
+    
+        
+        //wrong pk remote
+        nft2
+            .transfer_split_remote(
+                &owner_b_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                &mut ledger_authority,
+            )
+            .expect_err("transfer wrong pk remotey");
+
+        //remote case
+        let (mut nft2_a,mut nft2_b) = nft2
+            .transfer_split_remote(
+                &owner_a_priv,
+                [BigInt::from(1), BigInt::from(2)],
+                &owner_a_pub,
+                &owner_b_pub,
+                &mut ledger_authority,
+            )
+            .expect("transfer remote case");
+        
+            
+        //double spending remote
+        nft2
+        .transfer_split_remote(
+            &owner_a_priv,
+            [BigInt::from(1), BigInt::from(2)],
+            &owner_a_pub,
+            &owner_b_pub,
+            &mut ledger_authority,
+        )
+        .expect_err("transfer double remote");
+
+
+        sleep(Duration::from_secs(15)); //waiting for tree update
+        //
+        // burn
+        // 
+        println!("Testing burn");
+
+        //wrong pk
+        nft_b.burn(&owner_a_priv,&mut ledger_authority).expect_err("burn wrong pk");
+
+        //default case
+        nft_b.burn(&owner_b_priv,&mut ledger_authority).expect("burn default case");
+
+       
+        //double burning
+        nft_b.burn(&owner_b_priv,&mut ledger_authority).expect_err("burn double spending remote");
+
         
 
+        //wrong pk remote
+        nft2_b.burn_remote(&owner_a_priv,&mut ledger_authority).expect_err("burn wrong pk");
 
+        //default case remote
+        nft2_b.burn_remote(&owner_b_priv,&mut ledger_authority).expect("burn default case");
+
+       
+        //double burning remote
+        nft2_b.burn_remote(&owner_b_priv,&mut ledger_authority).expect_err("burn double spending remote");
 
     }
 
