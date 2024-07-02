@@ -204,16 +204,6 @@ mod test{
     use num_traits::Num;
 
 
-    
-    fn ledger_authority_check(){
-
-        let private_key = 
-        BigInt::from_str_radix("0001020304050607080900010203040506070809000102030405060708090001",16).unwrap();
-
-        let ledger_authority = 
-            DefaultLedgerAuthority::<PoseidonHasher,2>::new(20, vec![private_key.to_string()]);
-        
-    }
 
     #[test]
     fn serialize_ledger_authority(){
