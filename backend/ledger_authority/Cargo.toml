@@ -6,12 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crypto = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
-heimdall = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
-ark-circom-service = {git = "https://github.com/CGuthmann/heimdall-rs.git"}
+crypto = {git = "https://github.com/CGuthmann/heimdall-rs.git", branch = "feature/rapid_witnesscalc"}
+heimdall = {git = "https://github.com/CGuthmann/heimdall-rs.git", branch = "feature/rapid_witnesscalc"}
+ark-circom-service = {git = "https://github.com/CGuthmann/heimdall-rs.git", branch = "feature/rapid_witnesscalc"}
 serde = { version = "1.0", features = ["derive"] }
 num-bigint = { version = "0.4",default-features = false, features = ["serde", "rand"]}
 num-traits = {version = "0.2.15",  default-features = false}
 rand = "0.8"
 serde_json = "1.0.9"
 reqwest = {version = "0.11.24", features = ["blocking", "json"]}
+
+[features]
+rapid_witnesscalc = ["heimdall/rapid_witnesscalc", "ark-circom-service/rapid_witnesscalc"]

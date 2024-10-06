@@ -525,6 +525,150 @@ fn append_json_vector<T: ToString>(json: &mut String, vec: &[T]) {
     }
     json.push(']');
 }
+
+
+#[cfg(not(feature = "rapid_witnesscalc"))]
+mod witness_generation {
+
+    const CIRCUITS_PATH: &str = "lib";
+
+    pub mod mint {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_circuit, ArkCircomFullProof, Bn254};
+        
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_mint(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_mint.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+    
+            let proof = create_proof_from_circuit(
+                "lib/nft_mint.wasm",
+                "lib/nft_mint.r1cs",
+                json,
+                &zkey
+            )?;
+    
+            Ok(proof)
+        }
+    }
+
+    pub mod burn {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_circuit, ArkCircomFullProof, Bn254};
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_burn(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_burn.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+    
+            let proof = create_proof_from_circuit(
+                "lib/nft_burn.wasm",
+                "lib/nft_burn.r1cs",
+                json,
+                &zkey
+            )?;
+    
+            Ok(proof)
+        }
+    }
+
+    pub mod transfer {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_circuit, ArkCircomFullProof, Bn254};
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_transfer(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_transfer.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+    
+            let proof = create_proof_from_circuit(
+                "lib/nft_transfer.wasm",
+                "lib/nft_transfer.r1cs",
+                json,
+                &zkey
+            )?;
+    
+            Ok(proof)
+        }
+    }
+
+    ///Attempts to load the specified ressoruce at the default location for the system.
+    fn get_ressource(name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        match std::fs::read(format!("{}/{}", CIRCUITS_PATH, name)) {
+            Ok(res) => Ok(res),
+            Err(err) => Err(err)?,
+        }
+    }
+}
+
+
+#[cfg(feature = "rapid_witnesscalc")]
 mod witness_generation {
 
     const CIRCUITS_PATH: &str = "lib";

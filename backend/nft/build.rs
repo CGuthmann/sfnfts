@@ -1,3 +1,7 @@
+#[cfg(not(feature = "rapid_witnesscalc"))]
+fn main(){}
+
+#[cfg(feature = "rapid_witnesscalc")]
 fn main() {
         println!("cargo:rustc-link-search=native=/usr/lib/gcc/x86_64-linux-gnu/10/"); //path to libstdc++.a
         println!("cargo:rustc-link-search=native=./nft/lib");
