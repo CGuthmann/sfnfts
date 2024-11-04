@@ -1153,7 +1153,7 @@ mod test {
         let owner_b_priv = BigInt::from_str("3").unwrap();
         let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
 
-        let mut ledger_authority = RemoteLedgerAuthority::new("http://192.168.178.87:8000".to_string());
+        let mut ledger_authority = RemoteLedgerAuthority::new("http://localhost:8000".to_string());
 
         println!("Ledger authority init finished");
 
