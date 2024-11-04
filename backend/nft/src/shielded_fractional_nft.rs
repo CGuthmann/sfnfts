@@ -530,7 +530,7 @@ fn append_json_vector<T: ToString>(json: &mut String, vec: &[T]) {
 #[cfg(not(feature = "rapid_witnesscalc"))]
 mod witness_generation {
 
-    const CIRCUITS_PATH: &str = "lib";
+    const CIRCUITS_PATH: &str = "/usr/lib/sfnft-libs";
 
     pub mod mint {
         use super::*;
@@ -564,8 +564,8 @@ mod witness_generation {
             };
     
             let proof = create_proof_from_circuit(
-                "lib/nft_mint.wasm",
-                "lib/nft_mint.r1cs",
+                "/usr/lib/sfnft-libs/nft_mint.wasm",
+                "/usr/lib/sfnft-libs/nft_mint.r1cs",
                 json,
                 &zkey
             )?;
@@ -606,8 +606,8 @@ mod witness_generation {
             };
     
             let proof = create_proof_from_circuit(
-                "lib/nft_burn.wasm",
-                "lib/nft_burn.r1cs",
+                "/usr/lib/sfnft-libs/nft_burn.wasm",
+                "/usr/lib/sfnft-libs/nft_burn.r1cs",
                 json,
                 &zkey
             )?;
@@ -648,8 +648,8 @@ mod witness_generation {
             };
     
             let proof = create_proof_from_circuit(
-                "lib/nft_transfer.wasm",
-                "lib/nft_transfer.r1cs",
+                "/usr/lib/sfnft-libs/nft_transfer.wasm",
+                "/usr/lib/sfnft-libs/nft_transfer.r1cs",
                 json,
                 &zkey
             )?;
@@ -671,7 +671,7 @@ mod witness_generation {
 #[cfg(feature = "rapid_witnesscalc")]
 mod witness_generation {
 
-    const CIRCUITS_PATH: &str = "lib";
+    const CIRCUITS_PATH: &str = "/usr/lib/sfnft-libs";
 
     pub mod mint {
         use super::*;
