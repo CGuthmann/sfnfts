@@ -16,13 +16,13 @@ use ledger_authority::{remote_ledger_authority::RemoteLedgerAuthority, LedgerAut
 ///Implementation of a shielded fractional NFT
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShieldedFractionalNFT {
-    source_hash: BigInt,
-    public_key_owner: BigInt,
-    total_quantity: BigInt,
-    fraction: [BigInt; 2],
-    consumed: bool,
-    salt: BigInt,
-    tree_index: (usize, usize),
+    pub source_hash: BigInt,
+    pub public_key_owner: BigInt,
+    pub total_quantity: BigInt,
+    pub fraction: [BigInt; 2],
+    pub consumed: bool,
+    pub salt: BigInt,
+    pub tree_index: (usize, usize),
 }
 
 impl NFT for ShieldedFractionalNFT {
