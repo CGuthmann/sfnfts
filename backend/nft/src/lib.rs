@@ -21,7 +21,8 @@ pub trait NFT: Sized {
     /// # Return
     /// A minted [NFT]
     fn new(source: &BigInt, value: &BigInt, owner: &BigInt,
-         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>,private_key: &BigInt) 
+         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>, trust_list_proof: &MerkleProof<PoseidonHasher,2>,private_key: &BigInt
+         , is_child: bool) 
          -> Result<Self,Box<dyn Error>> ;
 
     /// Transfers the [NFT] to another private key
@@ -50,6 +51,13 @@ pub trait NFT: Sized {
     /// # Return
     /// [BigInt] of the current value of the NFT
     fn get_value(&self) -> BigInt;
+
+
+    ///Returns the ID found as owner in child NFTs
+    /// 
+    /// # Return
+    /// [BigInt] ID
+    fn get_id(&self) -> BigInt;
 }
 
 ///Trait for all fractional NFTs

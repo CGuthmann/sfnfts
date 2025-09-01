@@ -10,6 +10,7 @@ template MintShieldedFractionalNFT(depth){
     signal input total_quantity;
     signal input fraction[2]; 
     signal input consumed;
+    signal input is_child;
     signal input salt;
 
     signal input private_key;
@@ -27,6 +28,7 @@ template MintShieldedFractionalNFT(depth){
     shieldedFractionalNFTbase.fraction[0] <== fraction[0];
     shieldedFractionalNFTbase.fraction[1] <== fraction[1];
     shieldedFractionalNFTbase.consumed <== consumed;
+    shieldedFractionalNFTbase.is_child <== is_child;
     shieldedFractionalNFTbase.salt   <== salt;    
 
     nft_hash <== shieldedFractionalNFTbase.nft_hash;

@@ -43,7 +43,7 @@ In order to be able to compile Rust files you are support to install the rust to
 rust compiler `rustc`, `cargo` and the toolchain manager `rustup`. 
 
 #### Ubuntu
-1. Install Rust
+1. Install Rust (development version is 1.86)
    1. To do so run the following command and follow the script instructions:
        ```bash
        curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh

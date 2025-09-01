@@ -44,6 +44,12 @@ install(TARGETS
     nft_transfer
     witnesscalc_nft_transfer
     witnesscalc_nft_transferStatic
+    nft_transfer_child
+    witnesscalc_nft_transfer_child
+    witnesscalc_nft_transfer_childStatic
+    nft_child_parent
+    witnesscalc_nft_child_parent
+    witnesscalc_nft_child_parentStatic
     fr
     RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     BUNDLE DESTINATION ${CMAKE_INSTALL_PREFIX}/app
@@ -56,6 +62,8 @@ install(FILES
     src/nft_mint.dat
     src/nft_burn.dat
     src/nft_transfer.dat
+    src/nft_transfer_child.dat
+    src/nft_child_parent.dat
     src/poseidon_bench.dat
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
@@ -64,5 +72,7 @@ install(FILES
     src/witnesscalc_nft_mint.h
     src/witnesscalc_nft_burn.h
     src/witnesscalc_nft_transfer.h
+    src/witnesscalc_nft_child_parent.h
+    src/witnesscalc_nft_transfer_child.h
     src/witnesscalc_poseidon_bench.h
     DESTINATION ${CMAKE_INSTALL_PREFIX}/include)

@@ -18,6 +18,7 @@ template ShieldedFractionalNFTTransfer(depth){
     signal input base_total_quantity;
     signal input base_fraction[2]; 
     signal input base_consumed;
+    signal input base_is_child;
     signal input base_salt;
 
     signal input base_tree_index;
@@ -31,6 +32,7 @@ template ShieldedFractionalNFTTransfer(depth){
     signal input a_total_quantity;
     signal input a_fraction[2]; //reduced fraction
     signal input a_consumed;
+    signal input a_is_child;
     signal input a_salt;
     signal input a_divider; //common divider used for the fraction 
 
@@ -40,6 +42,7 @@ template ShieldedFractionalNFTTransfer(depth){
     signal input b_total_quantity;
     signal input b_fraction[2];  //reduced fraction
     signal input b_consumed;
+    signal input b_is_child;
     signal input b_salt;
     signal input b_divider; //common divider for the fraction 
 
@@ -76,6 +79,7 @@ template ShieldedFractionalNFTTransfer(depth){
     base_nft.fraction[0] <== base_fraction[0];
     base_nft.fraction[1] <== base_fraction[1];
     base_nft.consumed <== base_consumed;
+    base_nft.is_child <== base_is_child;
     base_nft.salt <== base_salt;
     base_nft.id <== base_id;
 
@@ -99,6 +103,7 @@ template ShieldedFractionalNFTTransfer(depth){
     a_nft.fraction[0] <== a_fraction[0];
     a_nft.fraction[1] <== a_fraction[1];
     a_nft.consumed <== a_consumed;
+    a_nft.is_child <== a_is_child;
     a_nft.salt <== a_salt;
     a_hash <== a_nft.nft_hash;
 
@@ -109,6 +114,7 @@ template ShieldedFractionalNFTTransfer(depth){
     b_nft.fraction[0] <== b_fraction[0];
     b_nft.fraction[1] <== b_fraction[1];
     b_nft.consumed <== b_consumed;
+    b_nft.is_child <== b_is_child;
     b_nft.salt <== b_salt;
     b_hash <== b_nft.nft_hash;
 

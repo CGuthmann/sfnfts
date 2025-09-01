@@ -11,12 +11,13 @@ template ShieldedFractionalNFTbase() {
     signal input total_quantity;
     signal input fraction[2]; 
     signal input consumed;
+    signal input is_child;
     signal input salt;
 
     signal output nft_hash; //1
 
-    component hash[7]; 
-    for (var i = 0; i < 7; i++) {
+    component hash[8]; 
+    for (var i = 0; i < 8; i++) {
             hash[i] = Poseidon(1);
     }
     
@@ -28,7 +29,8 @@ template ShieldedFractionalNFTbase() {
     hash[3].inputs[0] <== fraction[0];
     hash[4].inputs[0] <== fraction[1];
     hash[5].inputs[0] <== consumed;
-    hash[6].inputs[0] <== salt;
+    hash[6].inputs[0] <== is_child;
+    hash[7].inputs[0] <== salt;
 
 
     nftTree.values[0] <== hash[0].out;
@@ -38,7 +40,7 @@ template ShieldedFractionalNFTbase() {
     nftTree.values[4] <== hash[4].out;
     nftTree.values[5] <== hash[5].out;
     nftTree.values[6] <== hash[6].out;
-    nftTree.values[7] <== 19014214495641488759237505126948346942972912379615652741039992445865937985820; 
+    nftTree.values[7] <== hash[6].out;
 
     nft_hash <== nftTree.root;
 }
@@ -50,6 +52,7 @@ template ShieldedFractionalNFT(depth) {
     signal input total_quantity;
     signal input fraction[2]; 
     signal input consumed;
+    signal input is_child;
     signal input salt;
 
     signal input id;
@@ -66,6 +69,7 @@ template ShieldedFractionalNFT(depth) {
     shieldedFractionalNFTbase.fraction[0] <== fraction[0];
     shieldedFractionalNFTbase.fraction[1] <== fraction[1];
     shieldedFractionalNFTbase.consumed <== consumed;
+    shieldedFractionalNFTbase.is_child <== is_child;
     shieldedFractionalNFTbase.salt   <== salt;    
 
     component merkleProof = MerkleProof(depth);

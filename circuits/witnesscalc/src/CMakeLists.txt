@@ -124,3 +124,38 @@ target_link_libraries(nft_transfer witnesscalc_nft_transferStatic)
 target_compile_definitions(witnesscalc_nft_transfer PUBLIC CIRCUIT_NAME=nft_transfer)
 target_compile_definitions(witnesscalc_nft_transferStatic PUBLIC CIRCUIT_NAME=nft_transfer)
 target_compile_definitions(nft_transfer PUBLIC CIRCUIT_NAME=nft_transfer)
+
+
+
+# nft transfer_childing
+set(NFT_TRANSFER_CHILD_SOURCES ${LIB_SOURCES}
+    nft_transfer_child.cpp
+    witnesscalc_nft_transfer_child.h
+    witnesscalc_nft_transfer_child.cpp
+    )
+add_library(witnesscalc_nft_transfer_child SHARED ${NFT_TRANSFER_CHILD_SOURCES})
+add_library(witnesscalc_nft_transfer_childStatic STATIC ${NFT_TRANSFER_CHILD_SOURCES})
+set_target_properties(witnesscalc_nft_transfer_childStatic PROPERTIES OUTPUT_NAME nft_transfer_child)
+add_executable(nft_transfer_child main.cpp)
+target_link_libraries(nft_transfer_child witnesscalc_nft_transfer_childStatic)
+target_compile_definitions(witnesscalc_nft_transfer_child PUBLIC CIRCUIT_NAME=nft_transfer_child)
+target_compile_definitions(witnesscalc_nft_transfer_childStatic PUBLIC CIRCUIT_NAME=nft_transfer_child)
+target_compile_definitions(nft_transfer_child PUBLIC CIRCUIT_NAME=nft_transfer_child)
+
+
+
+
+# nft child_parenting
+set(NFT_CHILD_PARENT_SOURCES ${LIB_SOURCES}
+    nft_child_parent.cpp
+    witnesscalc_nft_child_parent.h
+    witnesscalc_nft_child_parent.cpp
+    )
+add_library(witnesscalc_nft_child_parent SHARED ${NFT_CHILD_PARENT_SOURCES})
+add_library(witnesscalc_nft_child_parentStatic STATIC ${NFT_CHILD_PARENT_SOURCES})
+set_target_properties(witnesscalc_nft_child_parentStatic PROPERTIES OUTPUT_NAME nft_child_parent)
+add_executable(nft_child_parent main.cpp)
+target_link_libraries(nft_child_parent witnesscalc_nft_child_parentStatic)
+target_compile_definitions(witnesscalc_nft_child_parent PUBLIC CIRCUIT_NAME=nft_child_parent)
+target_compile_definitions(witnesscalc_nft_child_parentStatic PUBLIC CIRCUIT_NAME=nft_child_parent)
+target_compile_definitions(nft_child_parent PUBLIC CIRCUIT_NAME=nft_child_parent)

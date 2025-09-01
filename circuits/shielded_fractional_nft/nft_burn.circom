@@ -10,6 +10,7 @@ template BurnShieldedFractionalNFT(depth){
     signal input total_quantity;
     signal input fraction[2]; 
     signal input consumed;
+    signal input is_child;
     signal input salt;
 
     signal input private_key;
@@ -41,6 +42,7 @@ template BurnShieldedFractionalNFT(depth){
     shieldedFractionalNFT.fraction[0] <== fraction[0];
     shieldedFractionalNFT.fraction[1] <== fraction[1];
     shieldedFractionalNFT.consumed <== 0;
+    shieldedFractionalNFT.is_child <== is_child;
     shieldedFractionalNFT.salt   <== salt;  
     shieldedFractionalNFT.id   <== id;  
 
@@ -67,6 +69,7 @@ template BurnShieldedFractionalNFT(depth){
     shieldedFractionalNFTburned.fraction[0] <== fraction[0];
     shieldedFractionalNFTburned.fraction[1] <== fraction[1];
     shieldedFractionalNFTburned.consumed <== 1;
+    shieldedFractionalNFTburned.is_child <== is_child;
     shieldedFractionalNFTburned.salt   <== salt;  
 
     burned_hash <==  shieldedFractionalNFTburned.nft_hash;

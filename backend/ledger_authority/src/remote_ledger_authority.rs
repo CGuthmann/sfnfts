@@ -74,6 +74,13 @@ impl<H: HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING
         
         Ok(resp.json()?)
     }
+    
+    fn transfer_from_nft(&mut self, proof_transfer_child: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>, proofs_child_parent: &Vec<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>)
+    -> Result<(usize,usize),Box<dyn std::error::Error>> {
+        let client = reqwest::blocking::Client::new();
+        let resp = client.post(self.url.to_owned() + "/transfer_child").json(&(proof_transfer_child,proofs_child_parent)).send()?;
+        Ok(resp.json()?)
+    }
 
 
 }

@@ -29,6 +29,17 @@ pub trait LedgerAuthority<H: HashFunction, const BRANCHING_FACTOR: usize> {
     fn transfer_split(&mut self, proof: &ArkCircomFullProof<Bn254>)
     -> Result<((usize,usize),(usize,usize)),Box<dyn Error>>;
 
+    
+    /// Transfers  the [NFT], which owner is another NFT
+    /// # Arguments
+    /// * `proof_transfer_child` - nft_transfer_child ZKP, proofing the validity of the transfer
+    /// * `proofs_child_parent` - vec of nft_child_parent ZKP, proofing the validity of child to root mapping
+    ///  
+    /// # Return
+    /// The indices of the new [NFT] (tree_index, nft_index)
+    fn transfer_from_nft(&mut self, proof_transfer_child: &ArkCircomFullProof<Bn254>, proofs_child_parent: &Vec<ArkCircomFullProof<Bn254>>)
+    -> Result<(usize,usize),Box<dyn Error>>;
+
     ///Burns the [NFT] encapsuled in the proof
     /// # Arguments
     /// * `proof` - nft_burn ZKP, proofing the validity of the burn
@@ -221,7 +232,78 @@ impl<H:HashFunction, const BRANCHING_FACTOR: usize> LedgerAuthority<H,BRANCHING_
     fn get_nullifier(&self) -> Vec<BigInt>{
         self.nullifier.clone()
     }
+    
+    fn transfer_from_nft(&mut self, proof_transfer_child: &ArkCircomFullProof<Bn254>, proofs_child_parent: &Vec<ArkCircomFullProof<Bn254>>)
+    -> Result<(usize,usize),Box<dyn Error>> {
+        
+        if self.nullifier.contains(&proof_transfer_child.outputs[0]){
+            Err("Nullified nft!")?
+        }
 
+        if proof_transfer_child.verify()? == false {
+            Err("Invalid proof!")?
+        }
+        
+        let proof_root_child = &proof_transfer_child.outputs[2];
+
+        if !self.tree_roots[proof_transfer_child.outputs[1].to_string().parse::<usize>()?].contains(proof_root_child) {
+            Err("Invalid merkle root!")?
+        }
+
+        for i in 0..proofs_child_parent.len(){
+
+            if self.nullifier.contains(&proofs_child_parent[i].outputs[0]){
+                        Err("Nullified nft!")?
+                }
+            
+            if self.nullifier.contains(&proofs_child_parent[i].outputs[1]){
+                        Err("Nullified nft!")?
+                }
+                
+
+            if proofs_child_parent[i].verify()? == false {
+                Err("Invalid proof!")?
+            }
+
+            let proof_root_parent = &proofs_child_parent[i].outputs[2];
+
+            if !self.tree_roots[proofs_child_parent[i].outputs[7].to_string().parse::<usize>()?].contains(proof_root_parent) {
+                Err("Invalid merkle root!")?
+            }
+            let proof_root_child = &proofs_child_parent[i].outputs[3];
+
+            if !self.tree_roots[proofs_child_parent[i].outputs[6].to_string().parse::<usize>()?].contains(proof_root_child) {
+                Err("Invalid merkle root!")?
+            }
+
+        }
+
+        let mut current_id = proof_transfer_child.outputs[5].clone();
+        
+        for i in 0..proofs_child_parent.len(){
+            println!("Round {i}");
+            if proofs_child_parent[i].outputs[5] != current_id {
+                Err("Invalid proof chain!")?
+            }
+            current_id = proofs_child_parent[i].outputs[4].clone();
+        }
+
+        if current_id != proof_transfer_child.outputs[3]{
+                Err("Invalid proof chain!")?
+        }
+        
+        self.tree[self.current_tree_index].update(self.next_index,proof_transfer_child.outputs[4].to_string());
+        self.tree_roots[self.current_tree_index].push(self.tree[self.current_tree_index].get_root().clone());
+        let index = (self.current_tree_index,self.next_index);
+        self.increase_index();
+
+        self.nullifier.push(proof_transfer_child.outputs[0].clone());
+
+        Ok(index)
+
+    }
+
+    
 }
 
 

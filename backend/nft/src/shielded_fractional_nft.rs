@@ -1,10 +1,11 @@
 use std::{error::Error, io::Write, ops::Mul, str::FromStr};
 
-use crate::{FractionalNFT, ShieldedNFT, NFT};
+use crate::{shielded_fractional_nft::witness_generation::{child_parent::proof_nft_child_parent, transfer_child::proof_nft_transfer_child}, FractionalNFT, ShieldedNFT, NFT};
 
 use ark_circom_service::{ArkCircomFullProof, Bn254};
-use crypto::{merkle_tree::MerkleProof, poseidon::PoseidonHasher};
+use crypto::{merkle_tree::MerkleProof, poseidon::PoseidonHasher, HashFunction};
 use num_bigint::{BigInt, RandBigInt};
+use num_traits::FromPrimitive;
 use rand::thread_rng;
 
 use serde::{Deserialize, Serialize};
@@ -21,8 +22,9 @@ pub struct ShieldedFractionalNFT {
     pub total_quantity: BigInt,
     pub fraction: [BigInt; 2],
     pub consumed: bool,
+    pub is_child: bool,
     pub salt: BigInt,
-    pub tree_index: (usize, usize),
+    pub tree_index: (usize, usize)
 }
 
 impl NFT for ShieldedFractionalNFT {
@@ -33,7 +35,8 @@ impl NFT for ShieldedFractionalNFT {
         owner: &BigInt,
         ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,
         trust_list_proof: &MerkleProof<PoseidonHasher, 2>,
-        private_key: &BigInt
+        private_key: &BigInt,
+        is_child: bool
     ) -> Result<Self, Box<dyn Error>> {
         let mut nft = ShieldedFractionalNFT {
             source_hash: source.clone(),
@@ -46,6 +49,7 @@ impl NFT for ShieldedFractionalNFT {
             consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
+            is_child
         };
 
 
@@ -136,6 +140,12 @@ impl NFT for ShieldedFractionalNFT {
     fn get_value(&self) -> BigInt {
         (self.total_quantity.clone() * self.fraction[0].clone()) / self.fraction[1].clone()
     }
+
+    fn get_id(&self) -> BigInt {
+        let hasher = PoseidonHasher::new();
+
+        hasher.hash_big_int(&[self.source_hash.clone(),self.salt.clone()])
+    }
 }
 
 impl FractionalNFT for ShieldedFractionalNFT {
@@ -164,8 +174,9 @@ impl FractionalNFT for ShieldedFractionalNFT {
             public_key_owner: target_a.clone(),
             fraction: [nom.clone(), denom.clone()],
             consumed: false,
-            salt: get_rand_int(),
+            salt: self.salt.clone(),
             tree_index: (0, 0),
+            is_child: false
         };
         let mut nft_b = ShieldedFractionalNFT {
             source_hash: self.source_hash.clone(),
@@ -175,6 +186,7 @@ impl FractionalNFT for ShieldedFractionalNFT {
             consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
+            is_child: false
         };
 
 
@@ -260,6 +272,12 @@ impl ShieldedFractionalNFT {
             prefix,
             if self.consumed { 1 } else { 0 }
         ));
+        
+        json.push_str(&format!(
+            "\"{}is_child\":\"{:?}\",",
+            prefix,
+            if self.is_child { 1 } else { 0 }
+        ));
 
         json.push_str(&format!("\"{}salt\":\"{:?}\"", prefix, self.salt));
 
@@ -300,6 +318,7 @@ impl ShieldedFractionalNFT {
             consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
+            is_child: true
         };
 
         let trust_list_proof = ledger_authority.get_trust_proof(trust_list_index)?;
@@ -432,6 +451,7 @@ impl ShieldedFractionalNFT {
             consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
+            is_child: false
         };
         let mut nft_b = ShieldedFractionalNFT {
             source_hash: self.source_hash.clone(),
@@ -441,6 +461,7 @@ impl ShieldedFractionalNFT {
             consumed: false,
             salt: get_rand_int(),
             tree_index: (0, 0),
+            is_child: false
         };
 
 
@@ -496,7 +517,188 @@ impl ShieldedFractionalNFT {
     }
 
 
+    pub fn transfer_to_nft(
+        &self,
+        private_key: &BigInt,
+        target: &ShieldedFractionalNFT,
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,)
+        -> Result<Self, Box<dyn std::error::Error>>{
+            
+             //Instantiates the new objects
 
+        let mut nft_a = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target.get_id(),
+            fraction: [BigInt::from_u8(1).unwrap(), BigInt::from_u8(1).unwrap()],
+            consumed: self.consumed,
+            salt: self.salt.clone(),
+            tree_index: (0, 0),
+            is_child: true
+        };
+        let nft_b = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target.get_id(),
+            fraction: [BigInt::from_u8(0).unwrap(), BigInt::from_u8(1).unwrap()],
+            consumed: self.consumed,
+            salt: get_rand_int(),
+            tree_index: (0, 0),
+            is_child: false
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        let merkle_proof =
+            ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
+
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+
+        json.push_str(&format!("\"private_key\":{:?},", private_key.to_string()));
+
+        json.push_str(&format!(
+            "\"fraction\":[\"1\",\"1\"],"
+        ));
+
+        self.append_flat_json(&mut json, &"base_".to_owned())?;
+        json.push(',');
+
+        json.push_str(&format!("\"base_tree_index\":\"{:?}\",", self.tree_index.0));
+        json.push_str(&format!("\"base_id\":\"{:?}\",", self.tree_index.1));
+        json.push_str(&format!("\"base_path\":"));
+        append_json_vector(&mut json, &merkle_proof.path);
+        json.push(',');
+        json.push_str(&format!("\"base_lemma\":"));
+        append_json_vector(&mut json, &merkle_proof.lemma);
+        json.push(',');
+
+        nft_a.append_flat_json(&mut json, &"a_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"a_divider\":\"{:?}\",", 1));
+
+        nft_b.append_flat_json(&mut json, &"b_".to_owned())?;
+        json.push(',');
+        json.push_str(&format!("\"b_divider\":\"{:?}\"", 1));
+
+        json.push('}');
+
+
+        let proof = proof_nft_transfer(&json, None, None)?;
+
+        std::io::stdout().flush().unwrap();
+        let (index_a, _) = ledger_authority.transfer_split(&proof)?;
+        nft_a.tree_index = index_a;
+        Ok(nft_a)
+    }
+
+    pub fn transfer_from_nft(
+        &self,
+        private_key_root: &BigInt,
+        target: &BigInt,
+        target_is_nft: bool,
+        path_nfts: &Vec<&ShieldedFractionalNFT>,    //path[0] is root, last is parent of self
+        ledger_authority: &mut dyn LedgerAuthority<PoseidonHasher,2>,)
+        -> Result<Self, Box<dyn std::error::Error>>{
+            
+             //Instantiates the new objects
+
+        let mut nft_a = ShieldedFractionalNFT {
+            source_hash: self.source_hash.clone(),
+            total_quantity: self.total_quantity.clone(),
+            public_key_owner: target.clone(),
+            fraction: self.fraction.clone(),
+            consumed: self.consumed,
+            salt: self.salt.clone(),
+            tree_index: (0, 0),
+            is_child: target_is_nft
+        };
+
+
+        std::io::stdout().flush().unwrap();
+        let merkle_proof =
+            ledger_authority.get_tree()[self.tree_index.0].generate_proof(self.tree_index.1)?;
+
+        //prepares the input arguments for the ZKP
+        let mut json = String::new();
+        json.push('{');
+
+        json.push_str(&format!("\"private_key\":\"{}\",", private_key_root.to_string()));
+
+        path_nfts[0].append_flat_json(&mut json, &"root_".to_owned())?;
+        json.push(',');
+        
+        self.append_flat_json(&mut json, &"child_".to_owned())?;
+        json.push(',');
+
+        json.push_str(&format!("\"child_tree_index\":\"{:?}\",", self.tree_index.0));
+        json.push_str(&format!("\"child_id\":\"{:?}\",", self.tree_index.1));
+        json.push_str(&format!("\"child_path\":"));
+        append_json_vector(&mut json, &merkle_proof.path);
+        json.push(',');
+        json.push_str(&format!("\"child_lemma\":"));
+        append_json_vector(&mut json, &merkle_proof.lemma);
+        json.push(',');
+
+        json.push_str(&format!("\"new_public_key_owner\":\"{:?}\",", target.clone()));
+        json.push_str(&format!(
+            "\"{}is_child\":\"{:?}\"",
+            "new_",
+            if self.is_child { 1 } else { 0 }
+        ));
+
+        json.push('}');
+
+
+        let proof_transfer_child = proof_nft_transfer_child(&json, None, None)?;
+
+        let mut proofs_child_parent: Vec<ArkCircomFullProof<Bn254>> = vec![];
+        
+        for i in 0..path_nfts.len()-1 {
+
+            let merkle_proof_child =
+                ledger_authority.get_tree()[path_nfts[i+1].tree_index.0].generate_proof(path_nfts[i+1].tree_index.1)?;
+                
+            let merkle_proof_parent =
+                ledger_authority.get_tree()[path_nfts[i].tree_index.0].generate_proof(path_nfts[i].tree_index.1)?;
+
+
+            let mut json = String::new();
+            json.push('{');
+            path_nfts[i].append_flat_json(&mut json, &"parent_".to_owned())?;
+            json.push(',');
+            json.push_str(&format!("\"parent_id\":\"{:?}\",", path_nfts[i].tree_index.1));
+            json.push_str(&format!("\"parent_index\":\"{:?}\",", path_nfts[i].tree_index.0));
+            json.push_str(&format!("\"parent_path\":"));
+            append_json_vector(&mut json, &merkle_proof_parent.path);
+            json.push(',');
+            json.push_str(&format!("\"parent_lemma\":"));
+            append_json_vector(&mut json, &merkle_proof_parent.lemma);
+            json.push(',');
+
+
+            
+            path_nfts[i+1].append_flat_json(&mut json, &"child_".to_owned())?;            
+            json.push(',');
+            json.push_str(&format!("\"child_id\":\"{:?}\",", path_nfts[i+1].tree_index.1));
+            json.push_str(&format!("\"child_index\":\"{:?}\",", path_nfts[i+1].tree_index.0));
+            json.push_str(&format!("\"child_path\":"));
+            append_json_vector(&mut json, &merkle_proof_child.path);
+            json.push(',');
+            json.push_str(&format!("\"child_lemma\":"));
+            append_json_vector(&mut json, &merkle_proof_child.lemma);
+
+            json.push('}');
+
+            let proof_child_parent = proof_nft_child_parent(&json, None, None)?;
+            proofs_child_parent.push(proof_child_parent);
+        }
+
+        let index_a = ledger_authority.transfer_from_nft(&proof_transfer_child,&proofs_child_parent)?;
+        nft_a.tree_index = index_a;
+        Ok(nft_a)
+    }
 }
 
 ///Returns a pseudo random BigInt
@@ -564,8 +766,8 @@ mod witness_generation {
             };
     
             let proof = create_proof_from_circuit(
-                "/usr/lib/sfnft-libs/nft_mint.wasm",
-                "/usr/lib/sfnft-libs/nft_mint.r1cs",
+                &format!("{}/{}.wasm",CIRCUITS_PATH,"nft_mint"),
+                &format!("{}/{}.r1cs",CIRCUITS_PATH,"nft_mint"),
                 json,
                 &zkey
             )?;
@@ -606,8 +808,8 @@ mod witness_generation {
             };
     
             let proof = create_proof_from_circuit(
-                "/usr/lib/sfnft-libs/nft_burn.wasm",
-                "/usr/lib/sfnft-libs/nft_burn.r1cs",
+                &format!("{}/{}.wasm",CIRCUITS_PATH,"nft_burn"),
+                &format!("{}/{}.r1cs",CIRCUITS_PATH,"nft_burn"),
                 json,
                 &zkey
             )?;
@@ -646,10 +848,9 @@ mod witness_generation {
                     Err(er) => Err(er)?,
                 },
             };
-    
             let proof = create_proof_from_circuit(
-                "/usr/lib/sfnft-libs/nft_transfer.wasm",
-                "/usr/lib/sfnft-libs/nft_transfer.r1cs",
+                &format!("{}/{}.wasm",CIRCUITS_PATH,"nft_transfer"),
+                &format!("{}/{}.r1cs",CIRCUITS_PATH,"nft_transfer"),
                 json,
                 &zkey
             )?;
@@ -658,6 +859,89 @@ mod witness_generation {
         }
     }
 
+    pub mod transfer_child {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_circuit, ArkCircomFullProof, Bn254};
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_transfer_child(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_transfer_child.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+    
+            let proof = create_proof_from_circuit(
+                &format!("{}/{}.wasm",CIRCUITS_PATH,"nft_transfer_child"),
+                &format!("{}/{}.r1cs",CIRCUITS_PATH,"nft_transfer_child"),
+                json,
+                &zkey
+            )?;
+    
+            Ok(proof)
+        }
+    }
+
+    pub mod child_parent {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_circuit, ArkCircomFullProof, Bn254};
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_child_parent(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_child_parent.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+    
+            let proof = create_proof_from_circuit(
+                &format!("{}/{}.wasm",CIRCUITS_PATH,"nft_child_parent"),
+                &format!("{}/{}.r1cs",CIRCUITS_PATH,"nft_child_parent"),
+                json,
+                &zkey
+            )?;
+    
+            Ok(proof)
+        }
+    }
     ///Attempts to load the specified ressoruce at the default location for the system.
     fn get_ressource(name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         match std::fs::read(format!("{}/{}", CIRCUITS_PATH, name)) {
@@ -993,6 +1277,220 @@ mod witness_generation {
         }
     }
 
+     pub mod transfer_child {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_witness, ArkCircomFullProof, Bn254};
+        use witness_utils::{create::WITNESS_SIZE_GUESS, read::read_wtns};
+
+        //Link to external witness generation provided by witnesscalc
+        #[link(name = "nft_transfer_child", kind = "static")]
+        extern "C" {
+            fn witnesscalc_nft_transfer_child(
+                circuit_buffer: *const u8,
+                circuit_size: u64,
+                json_buffer: *const u8,
+                json_size: u64,
+                wtns_buffer: *mut u8,
+                wtns_size: *mut u64,
+                error_buffer: *mut u8,
+                error_msg_maxsize: u64,
+            ) -> i32;
+        }
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_transfer_child(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let circuit = match circuit {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_transfer_child.dat") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let mut wtns: Vec<u8> = Vec::with_capacity(WITNESS_SIZE_GUESS as usize);
+            let mut witness_size: u64 = WITNESS_SIZE_GUESS;
+
+            let mut error: Vec<u8> = Vec::with_capacity(200);
+
+            let mut result;
+            unsafe {
+                result = witnesscalc_nft_transfer_child(
+                    circuit.as_ptr(),
+                    circuit.len() as u64,
+                    json.as_ptr(),
+                    json.len() as u64,
+                    wtns.as_mut_ptr(),
+                    &mut witness_size,
+                    error.as_mut_ptr(),
+                    200,
+                );
+            }
+
+            if result == 1 {
+                Err(result.to_string())?
+            } else if result == 2 {
+                wtns = Vec::with_capacity(witness_size as usize);
+                unsafe {
+                    result = witnesscalc_nft_transfer_child(
+                        circuit.as_ptr(),
+                        circuit.len() as u64,
+                        json.as_ptr(),
+                        json.len() as u64,
+                        wtns.as_mut_ptr(),
+                        &mut witness_size,
+                        error.as_mut_ptr(),
+                        200,
+                    );
+                };
+
+                if result != 0 {
+                    Err(result.to_string())?
+                }
+            }
+            unsafe {
+                wtns.set_len(witness_size as usize);
+            }
+            let witness = read_wtns(&wtns);
+
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_transfer_child.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let proof = create_proof_from_witness(&witness, &zkey)?;
+
+            Ok(proof)
+        }
+    }
+
+    pub mod child_parent {
+        use super::*;
+
+        use std::error::Error;
+
+        use ark_circom_service::{create_proof_from_witness, ArkCircomFullProof, Bn254};
+        use witness_utils::{create::WITNESS_SIZE_GUESS, read::read_wtns};
+
+        //Link to external witness generation provided by witnesscalc
+        #[link(name = "nft_child_parent", kind = "static")]
+        extern "C" {
+            fn witnesscalc_nft_child_parent(
+                circuit_buffer: *const u8,
+                circuit_size: u64,
+                json_buffer: *const u8,
+                json_size: u64,
+                wtns_buffer: *mut u8,
+                wtns_size: *mut u64,
+                error_buffer: *mut u8,
+                error_msg_maxsize: u64,
+            ) -> i32;
+        }
+
+        ///Generates a witness for the attribute presentation circuit.
+        ///
+        /// # Arguments
+        /// * 'circuit' -  The circuit definition provided by circom in the .dat file.
+        ///                 If not provided, the function attempts to read it from
+        ///                  the default directory for the system.
+        ///
+        /// * 'zkey' - The proving key for the circuit.
+        ///            If not provided, the function attempts to read it from
+        ///               the default directory for the system.
+        ///
+        pub fn proof_nft_child_parent(
+            json: &str,
+            circuit: Option<&Vec<u8>>,
+            zkey: Option<&Vec<u8>>,
+        ) -> Result<ArkCircomFullProof<Bn254>, Box<dyn Error>> {
+            let circuit = match circuit {
+                Some(res) => res.clone(),
+                None => match get_ressource("nft_child_parent.dat") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let mut wtns: Vec<u8> = Vec::with_capacity(WITNESS_SIZE_GUESS as usize);
+            let mut witness_size: u64 = WITNESS_SIZE_GUESS;
+
+            let mut error: Vec<u8> = Vec::with_capacity(200);
+
+            let mut result;
+            unsafe {
+                result = witnesscalc_nft_child_parent(
+                    circuit.as_ptr(),
+                    circuit.len() as u64,
+                    json.as_ptr(),
+                    json.len() as u64,
+                    wtns.as_mut_ptr(),
+                    &mut witness_size,
+                    error.as_mut_ptr(),
+                    200,
+                );
+            }
+
+            if result == 1 {
+                Err(result.to_string())?
+            } else if result == 2 {
+                wtns = Vec::with_capacity(witness_size as usize);
+                unsafe {
+                    result = witnesscalc_nft_child_parent(
+                        circuit.as_ptr(),
+                        circuit.len() as u64,
+                        json.as_ptr(),
+                        json.len() as u64,
+                        wtns.as_mut_ptr(),
+                        &mut witness_size,
+                        error.as_mut_ptr(),
+                        200,
+                    );
+                };
+
+                if result != 0 {
+                    Err(result.to_string())?
+                }
+            }
+            unsafe {
+                wtns.set_len(witness_size as usize);
+            }
+            let witness = read_wtns(&wtns);
+
+            let zkey = match zkey {
+                Some(res) => res.clone(),
+                None => match get_ressource("child_parent.zkey") {
+                    Ok(res) => res,
+                    Err(er) => Err(er)?,
+                },
+            };
+
+            let proof = create_proof_from_witness(&witness, &zkey)?;
+
+            Ok(proof)
+        }
+    }
+
+    
+
     ///Attempts to load the specified ressoruce at the default location for the system.
     fn get_ressource(name: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         match std::fs::read(format!("{}/{}", CIRCUITS_PATH, name)) {
@@ -1063,7 +1561,7 @@ mod test {
 
 
         let nft_wrap =
-            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv, false)
                 ;
         let nft = nft_wrap.expect("mint default case");
 
@@ -1074,7 +1572,7 @@ mod test {
 
 
         let nft_wrap =
-            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap(), false)
                 ;
         
         nft_wrap.expect_err("mint wrong trust list");
@@ -1140,7 +1638,82 @@ mod test {
         assert_eq!(nft_a.get_value(),BigInt::from_str("60").unwrap());
     }
 
+    
     #[test]
+    fn test_nft_child() {
+        let source = BigInt::from_str("333").unwrap();
+        let value = BigInt::from_str("120").unwrap();
+        
+        let trusted_priv = BigInt::from_str("1").unwrap();
+        let trusted_pub = BigInt::from_str("18586133768512220936620570745912940619677854269274689475585506675881198879027").unwrap();
+
+        let owner_a_priv = BigInt::from_str("2").unwrap();
+        let owner_a_pub = BigInt::from_str("8645981980787649023086883978738420856660271013038108762834452721572614684349").unwrap(); //poseidon of 2
+
+        let owner_b_priv = BigInt::from_str("3").unwrap();
+        let owner_b_pub = BigInt::from_str("6018413527099068561047958932369318610297162528491556075919075208700178480084").unwrap(); //poseidon of 3
+
+        println!("Ledger authority init start");
+
+        let mut trust_list =vec![
+            trusted_pub.to_string(),
+            "2".to_owned(),
+            "3".to_owned(),
+            "4".to_owned(),
+            "5".to_owned(),
+        ];
+
+        for _ in trust_list.len()..((2 as u32).pow(TRUST_DEPTH) as usize) {
+            trust_list.push("0".to_owned());
+        }
+
+        let mut ledger_authority: DefaultLedgerAuthority<PoseidonHasher, 2> = DefaultLedgerAuthority::new(
+            TREE_DEPTH,
+            trust_list
+        );
+        println!("Ledger authority init finished");
+
+        //
+        // minting
+        // 
+        println!("Testing minting");
+
+        //default case
+        let proof = ledger_authority.get_trust_list().generate_proof(0).unwrap();
+
+
+        let nft_wrap =
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv, false)
+                ;
+        let nft = nft_wrap.expect("mint default case");
+
+        let nft_wrap2 =
+            ShieldedFractionalNFT::new(&BigInt::from_str("334").unwrap(), &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv, false)
+                ;
+        let nft_2 = nft_wrap2.expect("mint default case");
+
+         let nft_wrap3 =
+            ShieldedFractionalNFT::new(&BigInt::from_str("335").unwrap(), &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv, false)
+                ;
+        let nft_3 = nft_wrap3.expect("mint default case");
+
+        println!("Testing transfer to nft");
+
+        let nft_child_wrap2 = nft_2.transfer_to_nft(&owner_a_priv, &nft, &mut ledger_authority);
+        let nft_child = nft_child_wrap2.expect("transfer to nft");
+
+        let nft_child_wrap3 = nft_3.transfer_to_nft(&owner_a_priv, &nft_child, &mut ledger_authority);
+        let nft_child_2 = nft_child_wrap3.expect("transfer to nft");
+        
+
+        println!("Testing transfer from nft");
+        let nft_wrap3: Result<ShieldedFractionalNFT, Box<dyn Error>> = nft_child_2.transfer_from_nft(&owner_a_priv, &owner_a_pub, false, &vec![&nft,&nft_child], &mut ledger_authority);
+        let nft3 = nft_wrap3.expect("Transfer from nft");
+    }
+
+
+
+    //#[test]
     fn test_nft_remote() {
         let source = BigInt::from_str("333").unwrap();
         let value = BigInt::from_str("120").unwrap();
@@ -1167,7 +1740,7 @@ mod test {
 
 
         let nft_wrap =
-            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv)
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&trusted_priv, false)
                 ;
         let nft = nft_wrap.expect("mint default case");
 
@@ -1177,7 +1750,7 @@ mod test {
 
 
         let nft_wrap =
-            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap())
+            ShieldedFractionalNFT::new(&source, &value, &owner_a_pub, &mut ledger_authority, &proof,&BigInt::from_str("1").unwrap(), false)
                 ;
         
         nft_wrap.expect_err("mint wrong trust list");

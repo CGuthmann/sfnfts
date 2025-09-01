@@ -127,6 +127,27 @@ pub async fn get_trust_proof(
     }
 }
 
+
+pub async fn post_transfer_child(
+    proof_json: Json<(ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>,Vec<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>)>
+) -> Result<(usize,usize), &'static str> {
+    let proofs = proof_json.into_inner();
+    match ledger_authority::get_ledger_authority() {
+        Ok(la) => {
+            match la.transfer_from_nft(&proofs.0,&proofs.1) {
+                Ok(res) => {
+                    match save_ledger_authority() {
+                        Ok(_) =>  Ok(res),
+                        Err(_) => Err("Transfer failed."),
+                    }
+                },
+                Err(_) => Err("Transfer failed."),
+            }
+        },
+        Err(_) => Err("Ledger authority currently unavailable."),
+    }
+}
+
 mod ledger_authority {
     use std::{
         error::Error,

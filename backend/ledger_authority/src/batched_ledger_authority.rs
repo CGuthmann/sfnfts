@@ -176,6 +176,72 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthorityInner<H,2>{
     fn get_nullifier(&self) -> Vec<BigInt>{
         self.nullifier.clone()
     }
+    
+     fn transfer_from_nft(&mut self, proof_transfer_child: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>, proofs_child_parent: &Vec<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>)
+    -> Result<(usize,usize),Box<dyn Error>> {
+        
+        if self.nullifier.contains(&proof_transfer_child.outputs[0]){
+            Err("Nullified nft!")?
+        }
+
+        if proof_transfer_child.verify()? == false {
+            Err("Invalid proof!")?
+        }
+        
+
+        if !self.tree_roots[&proof_transfer_child.outputs[2]]{
+            Err("Invalid merkle root!")?
+        }
+
+        for i in 0..proofs_child_parent.len(){
+
+            if self.nullifier.contains(&proofs_child_parent[i].outputs[0]){
+                        Err("Nullified nft!")?
+                }
+            
+            if self.nullifier.contains(&proofs_child_parent[i].outputs[1]){
+                        Err("Nullified nft!")?
+                }
+                
+
+            if proofs_child_parent[i].verify()? == false {
+                Err("Invalid proof!")?
+            }
+
+            if !self.tree_roots[&proofs_child_parent[i].outputs[2]]{
+                Err("Invalid merkle root!")?
+            }
+            let proof_root_child = &proofs_child_parent[i].outputs[3];
+
+            if !self.tree_roots[&proofs_child_parent[i].outputs[3]] {
+                Err("Invalid merkle root!")?
+            }
+
+        }
+
+        let mut current_id = proof_transfer_child.outputs[5].clone();
+        
+        for i in 0..proofs_child_parent.len(){
+            println!("Round {i}");
+            if proofs_child_parent[i].outputs[5] != current_id {
+                Err("Invalid proof chain!")?
+            }
+            current_id = proofs_child_parent[i].outputs[4].clone();
+        }
+
+        if current_id != proof_transfer_child.outputs[3]{
+                Err("Invalid proof chain!")?
+        }
+        
+        self.update_leaves.push(proof_transfer_child.outputs[4].to_string());
+        let index = (self.current_tree_index,self.next_index);
+        self.increase_index();
+
+        self.nullifier.push(proof_transfer_child.outputs[0].clone());
+
+        Ok(index)
+
+    }
 }
 
 
@@ -291,6 +357,12 @@ impl<H: HashFunction> LedgerAuthority<H,2> for BatchedLedgerAuthority<H,2>{
     fn get_nullifier(&self) -> Vec<BigInt> {
         let inner = self.inner.lock().unwrap();
         inner.get_nullifier()
+    }
+    
+    fn transfer_from_nft(&mut self, proof_transfer_child: &ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>, proofs_child_parent: &Vec<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>)
+    -> Result<(usize,usize),Box<dyn Error>> {
+        let mut inner = self.inner.lock().unwrap();
+        inner.transfer_from_nft(&proof_transfer_child,&proofs_child_parent)
     }
 }
 
