@@ -108,6 +108,18 @@ pub async fn post_transfer(
 }
 
 
+#[post("/transfer_child", format = "json", data = "<proof>")]
+pub async fn post_transfer_child(
+    proof: Json<(ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>,Vec<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>)>
+) -> Result<Json<(usize,usize)>, Status> {
+    let index = app_service::post_transfer_child(proof).await;
+    match index {
+        Ok(res) => Ok(Json(res)),
+        Err(_) => Err(Status::InternalServerError),
+    }
+}
+
+
 #[post("/burn", format = "json", data = "<proof>")]
 pub async fn post_burn(
     proof: Json<ark_circom_service::ArkCircomFullProof<ark_circom_service::Bn254>>,
